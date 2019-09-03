@@ -40,6 +40,7 @@ Port (     clk : in STD_LOGIC;                          --clock 100MHz
            --ooSwt : in STD_LOGIC;                        -- on/off switch 
            segment : out STD_LOGIC_VECTOR (6 downto 0); --set the number at the display
            anode : out STD_LOGIC_VECTOR (7 downto 0);   --on/off the displays
+           led: out std_logic_vector(2 downto 0);
            dot : out STD_LOGIC                          --on/off the dot in the display
            );    
 end chronometer;
@@ -47,7 +48,7 @@ end chronometer;
 -- nexys 4 ddr tem 8 display
 -- | dH | H | dm | m | ds | s | ms | dms |
 -- dH : dezenas de horas
--- H : horas
+-- H : horas-
 -- dm : dezenas de minutos
 -- m : minutos
 -- ds : dezenas de segundos
@@ -79,7 +80,7 @@ begin
                 cont <= cont + 1;
             else
                 cont <= "00000000000000000";
-                s_anode <= "11111111";
+                --s_anode <= "11111111";
             end if;
         end if;
     end process;
@@ -102,7 +103,7 @@ begin
     begin
         if(clk'event and clk='1') then
             -- conta 1 mili segundo
-            if(cont >= 100000) then
+            if(cont > 100000) then
                 cont_ms <= cont_ms + 1;
                 cont <= "00000000000000000";
             end if;
@@ -175,10 +176,28 @@ begin
     end process;
     
     -- maquina de estados do cronometro
-    state <= "00" when (state="01" and ssBtn='1') else
-             "01" when (state="00" and ssBtn='1') else
-             "10" when (lapBtn='1') else
-             "00" when (rstBtn='1');
+    process(ssBtn, lapBtn, rstBtn)
+    begin
+        if ssBtn='1' then
+            if state="01" then
+                state <= "00";
+            elsif state="00" then
+                state <= "01";
+            end if;
+        end if;
+        
+        if lapBtn='1' then
+            state<="10";
+        end if;
+        
+        if rstBtn='1' then
+            state<="00";
+        end if;
+    end process;
+--    state <= "00" when (state="01" and ssBtn='1') else
+--             "01" when (state="00" and ssBtn='1') else
+--             "10" when (lapBtn='1') else
+--             "00" when (rstBtn='1');
     
     -- dislay values
     segment <= "0111000" when show =x"F" else
@@ -209,6 +228,12 @@ begin
             
     dot <= '0' when (s_anode(6)='0' or s_anode(4)='0' or s_anode(2)='0')
            else '1';
+    
+    led <= "001" when (state="00") else
+            "010" when (state="01") else
+            "100" when (state="10") else
+            "000";
+
            
     anode <= s_anode;
 end rtl;

@@ -1,0 +1,51 @@
+Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2019.1.1 (win64) Build 2580384 Sat Jun 29 08:12:21 MDT 2019
+| Date         : Tue Sep  3 11:36:02 2019
+| Host         : DESKTOP-OKFMKNV running 64-bit major release  (build 9200)
+| Command      : report_methodology -file chronometer_methodology_drc_routed.rpt -pb chronometer_methodology_drc_routed.pb -rpx chronometer_methodology_drc_routed.rpx
+| Design       : chronometer
+| Device       : xc7a100tcsg324-1
+| Speed File   : -1
+| Design State : Fully Routed
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Methodology
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+             Max violations: <unlimited>
+             Violations found: 3
++-----------+----------+------------------------------+------------+
+| Rule      | Severity | Description                  | Violations |
++-----------+----------+------------------------------+------------+
+| LUTAR-1   | Warning  | LUT drives async reset alert | 1          |
+| TIMING-20 | Warning  | Non-clocked latch            | 2          |
++-----------+----------+------------------------------+------------+
+
+2. REPORT DETAILS
+-----------------
+LUTAR-1#1 Warning
+LUT drives async reset alert  
+LUT cell state_reg[0]_i_2, with 2 or more inputs, drives asynchronous preset/clear pin(s) state_reg[0]/CLR. The LUT may glitch and trigger an unexpected reset, even if it is a properly timed path.
+Related violations: <none>
+
+TIMING-20#1 Warning
+Non-clocked latch  
+The latch state_reg[0] cannot be properly analyzed as its control pin state_reg[0]/G is not reached by a timing clock
+Related violations: <none>
+
+TIMING-20#2 Warning
+Non-clocked latch  
+The latch state_reg[1]/L7 (in state_reg[1] macro) cannot be properly analyzed as its control pin state_reg[1]/L7/G is not reached by a timing clock
+Related violations: <none>
+
+
