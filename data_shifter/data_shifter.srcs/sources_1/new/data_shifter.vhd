@@ -47,17 +47,17 @@ architecture rtl of data_shifter is
     signal s_anode: std_logic_vector(7 downto 0);
     signal cont: std_logic_vector(16 downto 0);
     signal show: std_logic_vector(3 downto 0);
-    signal state: std_logic;    -- estados: shiftado ou não shiftado
+    signal state: std_logic;    -- estados: shiftado ou nï¿½o shiftado
 
 begin
 
     process(clk)
-    -- este process é um grupo de ff que realiza o shifter
+    -- este process ï¿½ um grupo de ff que realiza o shifter
     begin
         if(clk'event and clk='1') then
             if(button = '1' and state ='0') then
                 state <= '1';
-                shift_out <= shift_out(15 downto 0) & value; -- & é para concatenar o valor
+                shift_out <= shift_out(15 downto 0) & value; -- & ï¿½ para concatenar o valor
             else
                 if(button = '0') then
                     state <= '0';

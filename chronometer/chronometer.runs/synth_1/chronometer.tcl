@@ -31,7 +31,12 @@ set_property target_language VHDL [current_project]
 set_property board_part digilentinc.com:nexys4_ddr:part0:1.1 [current_project]
 set_property ip_output_repo c:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/chronometer.cache/ip [current_project]
 set_property ip_cache_permissions {read write} [current_project]
-read_vhdl -library xil_defaultlib C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/chronometer.srcs/sources_1/new/chronometer.vhd
+read_vhdl -library xil_defaultlib {
+  C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/chronometer.srcs/sources_1/new/counter.vhd
+  C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/chronometer.srcs/sources_1/new/delay.vhd
+  C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/chronometer.srcs/sources_1/new/display7seg.vhd
+  C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/chronometer.srcs/sources_1/new/chronometer.vhd
+}
 # Mark all dcp files as not used in implementation to prevent them from being
 # stitched into the results of this synthesis run. Any black boxes in the
 # design are intentionally left as such for best results. Dcp files will be
