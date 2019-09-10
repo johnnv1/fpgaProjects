@@ -35,13 +35,13 @@ use ieee.std_logic_unsigned.all;
 entity chronometer is
 Port (     clk              : in STD_LOGIC;                          
            ssBtn            : in STD_LOGIC;                         --start/stop button: start/stop the chronometer
-           rstBtn           : in STD_LOGIC;                         --reset button: reset the chronometer
+           rstSwt           : in STD_LOGIC;                         --reset switch: reset the chronometer
            lapBtn           : in STD_LOGIC;                         --lap button : stop the display but continue cont
-           --ooSwt          : in STD_LOGIC;                         -- on/off switch 
+           --ooSwt            : in STD_LOGIC;                         -- on/off switch 
            segment          : out STD_LOGIC_VECTOR (7 downto 0);    --set the number at the display, MBS is for the dot (bit 7)
            anode            : out STD_LOGIC_VECTOR (7 downto 0);    --on/off the displays
            led              : out std_logic_vector(2 downto 0);
-           ledOverflow      : out std_logic
+           ledOverflow      : out std_logic_vector(7 downto 0)
            );    
 end chronometer;
 
@@ -50,8 +50,10 @@ architecture rtl of chronometer is
     signal delayFlag        : STD_LOGIC;
     signal overflowVec      : STD_LOGIC_VECTOR(6 downto 0);
     signal chronome         : std_logic_vector(31 downto 0);
-    signal state            : std_logic_vector(1 downto 0);     -- estado do cronometro: 0-stop, 1-start/cronometrando, 2-lap
-
+    type states is (P0, P1, R0, R1, LAP);    -- parado e btn em 1, parado e btn em 0, run e btn em 1, parado e btn em 0
+    signal current_state    : states;
+    signal running          : STD_LOGIC;
+    
     component display7seg
         Port (     
                 clk         : in STD_LOGIC;                             
@@ -108,14 +110,14 @@ begin
     idelay : delay
         port map (
             clk         => clk,
-            rst_n       => rstBtn,
+            rst_n       => rstSwt,
             pulseOut    => delayFlag
         );
     
     idisplay : display7seg
         port map (
             clk         => clk,
-            rst_n       => rstBtn,
+            rst_n       => rstSwt,
             value       => chronome,
             dot_i       => "10101011",
             anode       => anode,
@@ -127,8 +129,8 @@ begin
     i100Hz : counter
         port map (
             clk         => clk,
-            rst_n       => rstBtn,
-            countEn     => delayFlag,
+            rst_n       => rstSwt,
+            countEn     => running,
             value       => chronome(3 downto 0),
             overflow    => overflowVec(0)
         );
@@ -136,26 +138,26 @@ begin
     i10Hz : counter
         port map (
             clk         => clk,
-            rst_n       => rstBtn,
-            countEn     => overflowVec(1),
+            rst_n       => rstSwt,
+            countEn     => overflowVec(0),
             value       => chronome(7 downto 4),
-            overflow    => overflowVec(2)
+            overflow    => overflowVec(1)
         );    
 
     i1Hz : counter
         port map (
             clk         => clk,
-            rst_n       => rstBtn,
+            rst_n       => rstSwt,
             countEn     => overflowVec(1),
             value       => chronome(11 downto 8),
             overflow    => overflowVec(2)
         );
 
     iDecimalSeg : counter
-        generic map ( module => 5)
+        generic map ( module => 6)
         port map (
             clk         => clk,
-            rst_n       => rstBtn,
+            rst_n       => rstSwt,
             countEn     => overflowVec(2),
             value       => chronome(15 downto 12),
             overflow    => overflowVec(3)
@@ -164,17 +166,17 @@ begin
     iMin : counter
         port map (
             clk         => clk,
-            rst_n       => rstBtn,
+            rst_n       => rstSwt,
             countEn     => overflowVec(3),
             value       => chronome(19 downto 16),
             overflow    => overflowVec(4)
         );
 
     iDecimalMin : counter
-        generic map ( module => 5)
+        generic map ( module => 6)
         port map (
             clk         => clk,
-            rst_n       => rstBtn,
+            rst_n       => rstSwt,
             countEn     => overflowVec(4),
             value       => chronome(23 downto 20),
             overflow    => overflowVec(5)
@@ -183,46 +185,76 @@ begin
     iHr : counter
         port map (
             clk         => clk,
-            rst_n       => rstBtn,
+            rst_n       => rstSwt,
             countEn     => overflowVec(5),
             value       => chronome(27 downto 24),
             overflow    => overflowVec(6)
         );
 
     iDecimalHr : counter
-        generic map ( module => 5)
+        generic map ( module => 6)
         port map (
             clk         => clk,
-            rst_n       => rstBtn,
+            rst_n       => rstSwt,
             countEn     => overflowVec(6),
             value       => chronome(31 downto 28),
-            overflow    => ledOverflow
+            overflow    => ledOverflow(7)  -- use open
         );
 
     -- maquina de estados do cronometro
-    process(ssBtn, lapBtn, rstBtn)
+--    process(ssBtn, lapBtn, rstBtn)
+--    begin
+--        if ssBtn='1' then
+--            if state="01" then
+--                state <= "00";
+--            elsif state="00" then
+--                state <= "01";
+--            end if;
+--        end if;
+        
+--        if lapBtn='1' then
+--            state<="10";
+--        end if;
+        
+--        if rstBtn='1' then
+--            state<="00";
+--        end if;
+--    end process;
+    process(clk)
     begin
-        if ssBtn='1' then
-            if state="01" then
-                state <= "00";
-            elsif state="00" then
-                state <= "01";
+        if(clk'event and clk='1') then
+            if(rstSwt = '0') then
+                current_state <= P0;
+            else
+                case current_state is
+                    when P1 =>
+                        if ssBtn='0' then
+                            current_state <= P0;
+                        end if;
+                    when R0 =>
+                        if ssBtn='0' then
+                            current_state <= R1;
+                        end if;
+                    when R1 =>
+                        if ssBtn='1' then
+                            current_state <= P1;
+                        end if;
+                    when others =>  -- P0
+                        if ssBtn='1' then
+                            current_state <= R0;
+                        end if;
+                end case;
             end if;
-        end if;
-        
-        if lapBtn='1' then
-            state<="10";
-        end if;
-        
-        if rstBtn='1' then
-            state<="00";
         end if;
     end process;
 
-    led <= "001" when (state="00") else
-        "010" when (state="01") else
-        "100" when (state="10") else
+    running <= '1' when ((current_state= R0 or current_state=R1) and delayFlag ='1') else
+                '0';
+                    
+    led <= "001" when (current_state=P0 or current_state= P1) else
+        "010" when (current_state=R1 or current_state=R1) else
+        "100" when (current_state=LAP) else
         "000";
-
-
+    
+    ledOverflow(6 downto 0) <= overflowVec(6 downto 0);
 end rtl;

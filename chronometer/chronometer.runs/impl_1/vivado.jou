@@ -2,8 +2,8 @@
 # Vivado v2019.1.1 (64-bit)
 # SW Build 2580384 on Sat Jun 29 08:12:21 MDT 2019
 # IP Build 2579722 on Sat Jun 29 11:35:40 MDT 2019
-# Start of session at: Tue Sep  3 15:56:43 2019
-# Process ID: 15820
+# Start of session at: Tue Sep 10 16:03:57 2019
+# Process ID: 9588
 # Current directory: C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/chronometer.runs/impl_1
 # Command line: vivado.exe -log chronometer.vdi -applog -product Vivado -messageDb vivado.pb -mode batch -source chronometer.tcl -notrace
 # Log file: C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/chronometer.runs/impl_1/chronometer.vdi

@@ -1,7 +1,7 @@
 Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
 ----------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2019.1.1 (win64) Build 2580384 Sat Jun 29 08:12:21 MDT 2019
-| Date         : Tue Sep  3 15:57:50 2019
+| Date         : Tue Sep 10 16:04:29 2019
 | Host         : DESKTOP-OKFMKNV running 64-bit major release  (build 9200)
 | Command      : report_control_sets -verbose -file chronometer_control_sets_placed.rpt
 | Design       : chronometer
@@ -23,11 +23,11 @@ Table of Contents
 +----------------------------------------------------------+-------+
 |                          Status                          | Count |
 +----------------------------------------------------------+-------+
-| Total control sets                                       |     6 |
-|    Minimum number of control sets                        |     6 |
+| Total control sets                                       |    12 |
+|    Minimum number of control sets                        |    12 |
 |    Addition due to synthesis replication                 |     0 |
 |    Addition due to physical synthesis replication        |     0 |
-| Unused register locations in slices containing registers |    29 |
+| Unused register locations in slices containing registers |    47 |
 +----------------------------------------------------------+-------+
 * Control sets can be merged at opt_design using control_set_merge or merge_equivalent_drivers
 ** Run report_qor_suggestions for automated merging and remapping suggestions
@@ -39,9 +39,9 @@ Table of Contents
 +--------------------+-------+
 |       Fanout       | Count |
 +--------------------+-------+
-| Total control sets |     6 |
-| >= 0 to < 4        |     2 |
-| >= 4 to < 6        |     1 |
+| Total control sets |    12 |
+| >= 0 to < 4        |     0 |
+| >= 4 to < 6        |     9 |
 | >= 6 to < 8        |     0 |
 | >= 8 to < 10       |     0 |
 | >= 10 to < 12      |     0 |
@@ -58,27 +58,33 @@ Table of Contents
 +--------------+-----------------------+------------------------+-----------------+--------------+
 | Clock Enable | Synchronous Set/Reset | Asynchronous Set/Reset | Total Registers | Total Slices |
 +--------------+-----------------------+------------------------+-----------------+--------------+
-| No           | No                    | No                     |              18 |            6 |
+| No           | No                    | No                     |              17 |            5 |
 | No           | No                    | Yes                    |               0 |            0 |
-| No           | Yes                   | No                     |              21 |            6 |
+| No           | Yes                   | No                     |              20 |            5 |
 | Yes          | No                    | No                     |               0 |            0 |
 | Yes          | No                    | Yes                    |               0 |            0 |
-| Yes          | Yes                   | No                     |              20 |            5 |
+| Yes          | Yes                   | No                     |              52 |           19 |
 +--------------+-----------------------+------------------------+-----------------+--------------+
 
 
 4. Detailed Control Set Information
 -----------------------------------
 
-+-----------------------+-----------------------------+------------------------------+------------------+----------------+
-|      Clock Signal     |        Enable Signal        |       Set/Reset Signal       | Slice Load Count | Bel Load Count |
-+-----------------------+-----------------------------+------------------------------+------------------+----------------+
-|  state_reg[1]/G0      |                             |                              |                1 |              1 |
-|  state_reg[1]_i_1_n_0 |                             | state_reg[0]_i_2_n_0         |                1 |              1 |
-|  clk_IBUF_BUFG        | idelay/E[0]                 | idelay/SR[0]                 |                2 |              4 |
-|  clk_IBUF_BUFG        | idisplay/s_anode[7]_i_2_n_0 | idisplay/p_0_in              |                3 |             16 |
-|  clk_IBUF_BUFG        |                             |                              |                5 |             17 |
-|  clk_IBUF_BUFG        |                             | idelay/counter[0]_i_1__0_n_0 |                5 |             20 |
-+-----------------------+-----------------------------+------------------------------+------------------+----------------+
++----------------+-------------------------------------+-----------------------------------+------------------+----------------+
+|  Clock Signal  |            Enable Signal            |          Set/Reset Signal         | Slice Load Count | Bel Load Count |
++----------------+-------------------------------------+-----------------------------------+------------------+----------------+
+|  clk_IBUF_BUFG | i10Hz/ledOverflow_OBUF[0]           | i1Hz/counter[3]_i_1__4_n_0        |                1 |              4 |
+|  clk_IBUF_BUFG | i1Hz/E[0]                           | iDecimalSeg/counter[3]_i_1__3_n_0 |                2 |              4 |
+|  clk_IBUF_BUFG | iHr/counter_reg[3]_0[0]             | iHr/SR[0]                         |                2 |              4 |
+|  clk_IBUF_BUFG | iMin/counter_reg[1]_0[0]            | iDecimalMin/counter[3]_i_1__1_n_0 |                1 |              4 |
+|  clk_IBUF_BUFG | iDecimalMin/counter_reg[1]_0[0]     | iHr/counter[3]_i_1__0_n_0         |                1 |              4 |
+|  clk_IBUF_BUFG | iDecimalSeg/E[0]                    | iMin/counter[3]_i_1__2_n_0        |                1 |              4 |
+|  clk_IBUF_BUFG | idelay/ledOverflow_OBUF[0]          | i10Hz/counter[3]_i_1__5_n_0       |                1 |              4 |
+|  clk_IBUF_BUFG | idelay/E[0]                         | idelay/SR[0]                      |                2 |              4 |
+|  clk_IBUF_BUFG | FSM_onehot_current_state[4]_i_2_n_0 | idisplay/SR[0]                    |                1 |              4 |
+|  clk_IBUF_BUFG | idisplay/eqOp                       | idisplay/SR[0]                    |                7 |             16 |
+|  clk_IBUF_BUFG |                                     |                                   |                5 |             17 |
+|  clk_IBUF_BUFG |                                     | idelay/counter[0]_i_1_n_0         |                5 |             20 |
++----------------+-------------------------------------+-----------------------------------+------------------+----------------+
 
 

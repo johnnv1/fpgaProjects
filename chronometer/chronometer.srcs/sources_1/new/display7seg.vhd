@@ -91,12 +91,12 @@ begin
                "1001111" when show =x"1" else
                "0000001";
                
-    show <= value(23 downto 20) when s_anode(7)='0' else
-            value(19 downto 16) when s_anode(6)='0' else
-            value(15 downto 12) when s_anode(5)='0' else
-            value(11 downto 08) when s_anode(4)='0' else
-            value(07 downto 04) when s_anode(3)='0' else
-            value(03 downto 00) when s_anode(2)='0' else
+    show <= value(31 downto 28) when s_anode(7)='0' else
+            value(27 downto 24) when s_anode(6)='0' else
+            value(23 downto 20) when s_anode(5)='0' else
+            value(19 downto 16) when s_anode(4)='0' else
+            value(15 downto 12) when s_anode(3)='0' else
+            value(11 downto 08) when s_anode(2)='0' else
             value(07 downto 04) when s_anode(1)='0' else
             value(03 downto 00);
             
