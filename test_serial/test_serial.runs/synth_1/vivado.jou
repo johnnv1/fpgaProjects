@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Vivado v2019.1.1 (64-bit)
+# SW Build 2580384 on Sat Jun 29 08:12:21 MDT 2019
+# IP Build 2579722 on Sat Jun 29 11:35:40 MDT 2019
+# Start of session at: Tue Sep 17 16:55:17 2019
+# Process ID: 8616
+# Current directory: C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/test_serial/test_serial.runs/synth_1
+# Command line: vivado.exe -log serial.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source serial.tcl
+# Log file: C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/test_serial/test_serial.runs/synth_1/serial.vds
+# Journal file: C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/test_serial/test_serial.runs/synth_1\vivado.jou
+#-----------------------------------------------------------
+source serial.tcl -notrace
