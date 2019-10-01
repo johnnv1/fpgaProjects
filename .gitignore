@@ -9,3 +9,6 @@ env/
 .vscode/
 venv/
 __pycache__/
+
+.Xil/
+vivado_*/
