@@ -20,6 +20,7 @@ No console do vivado entre na pasta onde deseja exportar/salvar o projeto e exec
 write_project_tcl nomeDoArquivo.tcl
 ```
 
+
 --------
 
 Para criar um projeto a partir do arquivo **tcl** abra o vivado e va para um tcl console do vivado e execute o comando
