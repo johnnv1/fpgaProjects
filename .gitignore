@@ -12,3 +12,6 @@ __pycache__/
 
 .Xil/
 vivado_*/
+sdk_*/
+
+files/
