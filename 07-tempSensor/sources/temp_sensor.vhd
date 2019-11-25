@@ -46,12 +46,20 @@ architecture rtl of temp_sensor is
     signal negative : std_logic;
     signal anode_sig : std_logic;
     signal seg_ov : std_logic_vector(7 downto 0);
+    signal rst_n_sync : std_logic_vector(0 to 2);
+    
 begin
-
+    process(clk)
+    begin
+        if(clk'event and clk='1') then
+            rst_n_sync <= rst_n_sync(1 to 2) & rst_n;
+        end if;
+    end process;
+    
     display : seven_segments
     port map (
         clk => clk,
-        rst_n => rst_n,
+        rst_n => rst_n_sync(0),
         value => value,
         point => x"FB",
         an(7 downto 6) => dummy,
@@ -71,7 +79,7 @@ begin
     )
     port map (
         clk => clk,
-        reset_n => rst_n,
+        reset_n => rst_n_sync(0),
         ena => i2c_enable,
         addr => "1001011", -- 4b for sensor temp
         rw => i2c_read,
@@ -94,7 +102,7 @@ begin
     ctrl : process(clk)
     begin
         if (clk'event and clk='1') then
-            if (rst_n = '0') then -- reset
+            if (rst_n_sync(0) = '0') then -- reset
                 i2c_enable <= '0';
                 i2c_read <= '0';
                 ctrl_state <= IDLE;
