@@ -38,6 +38,7 @@
 #include "xil_cache.h"
 #include "timer_ps/timer_ps.h"
 #include "xparameters.h"
+#include "platform.h"
 
 
 /*
@@ -86,6 +87,7 @@ const ivt_t ivt[] = {
 
 int main(void)
 {
+    init_platform();
 
     print("Hello World\n\r");
 
@@ -93,6 +95,7 @@ int main(void)
 
 	DemoRun();
 
+    cleanup_platform();
     return 0;
 }
 
