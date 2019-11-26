@@ -105,7 +105,7 @@ void DemoInitialize()
 	int Status;
 	XAxiVdma_Config *vdmaConfig;
 	int i;
-
+	xil_printf("demo init - init of the demo init\n\r");
 	/*
 	 * Initialize an array of pointers to the 3 frame buffers
 	 */
@@ -125,13 +125,13 @@ void DemoInitialize()
 	vdmaConfig = XAxiVdma_LookupConfig(VGA_VDMA_ID);
 	if (!vdmaConfig)
 	{
-		xil_printf("No video DMA found for ID %d\r\n", VGA_VDMA_ID);
+		xil_printf("demo init - No video DMA found for ID %d\r\n", VGA_VDMA_ID);
 		return;
 	}
 	Status = XAxiVdma_CfgInitialize(&vdma, vdmaConfig, vdmaConfig->BaseAddress);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf("VDMA Configuration Initialization failed %d\r\n", Status);
+		xil_printf("demo init - VDMA Configuration Initialization failed %d\r\n", Status);
 		return;
 	}
 
@@ -141,13 +141,13 @@ void DemoInitialize()
 	Status = DisplayInitialize(&dispCtrl, &vdma, DISP_VTC_ID, DYNCLK_BASEADDR, pFrames, DEMO_STRIDE);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf("Display Ctrl initialization failed during demo initialization%d\r\n", Status);
+		xil_printf("demo init - Display Ctrl initialization failed during demo initialization%d\r\n", Status);
 		return;
 	}
 	Status = DisplayStart(&dispCtrl);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf("Couldn't start display during demo initialization%d\r\n", Status);
+		xil_printf("demo init - Couldn't start display during demo initialization%d\r\n", Status);
 		return;
 	}
 
@@ -156,7 +156,7 @@ void DemoInitialize()
 	 */
 	Status = fnInitInterruptController(&intc);
 	if(Status != XST_SUCCESS) {
-		xil_printf("Error initializing interrupts");
+		xil_printf("demo init - Error initializing interrupts");
 		return;
 	}
 	fnEnableInterrupts(&intc, &ivt[0], sizeof(ivt)/sizeof(ivt[0]));
@@ -167,7 +167,7 @@ void DemoInitialize()
 	Status = VideoInitialize(&videoCapt, &intc, &vdma, VID_GPIO_ID, VID_VTC_ID, VID_VTC_IRPT_ID, pFrames, DEMO_STRIDE, 0);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf("Video Ctrl initialization failed during demo initialization%d\r\n", Status);
+		xil_printf("demo init - Video Ctrl initialization failed during demo initialization%d\r\n", Status);
 		return;
 	}
 
@@ -178,6 +178,7 @@ void DemoInitialize()
 
 	DemoPrintTest(dispCtrl.framePtr[dispCtrl.curFrame], dispCtrl.vMode.width, dispCtrl.vMode.height, dispCtrl.stride, DEMO_PATTERN_1);
 
+	xil_printf("demo init - end of the demo init\n\r");
 	return;
 }
 
@@ -186,6 +187,7 @@ void DemoRun()
 	int nextFrame = 0;
 	char userInput = 0;
 
+	xil_printf("demo run - init of the demo run\n\r");
 	/* Flush UART FIFO */
 	while (XUartPs_IsReceiveData(UART_BASEADDR))
 	{
@@ -235,7 +237,7 @@ void DemoRun()
 			if (videoCapt.state == VIDEO_STREAMING)
 				VideoStop(&videoCapt);
 			else{
-				xil_printf("call VideoStart %d", &videoCapt);
+				xil_printf("call VideoStart %d\r\n", &videoCapt);
 				VideoStart(&videoCapt);
 			}
 			break;
@@ -278,7 +280,7 @@ void DemoRun()
 			TimerDelay(500000);
 		}
 	}
-
+	xil_printf("demo run - end of the demo run\n\r");
 	return;
 }
 
@@ -317,6 +319,7 @@ void DemoChangeRes()
 	int status;
 	char userInput = 0;
 
+	xil_printf("DemoChangeRes - init of the DemoChangeRes\n\r");
 	/* Flush UART FIFO */
 	while (XUartPs_IsReceiveData(UART_BASEADDR))
 	{
@@ -379,6 +382,7 @@ void DemoChangeRes()
 			xil_printf("\n\rWARNING: AXI VDMA Error detected and cleared\n\r");
 		}
 	}
+	xil_printf("DemoChangeRes - end of the DemoChangeRes\n\r");
 }
 
 void DemoCRMenu()
