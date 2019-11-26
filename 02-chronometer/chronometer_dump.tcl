@@ -27,12 +27,12 @@
 #
 # 3. The following remote source files that were added to the original project:-
 #
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/sources/counter.vhd"
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/sources/delay.vhd"
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/sources/display7seg.vhd"
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/sources/chronometer.vhd"
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/chronometer.xdc"
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/chronometer/simulation/tb_chronometer.vhd"
+#    "sources/counter.vhd"
+#    "sources/delay.vhd"
+#    "sources/display7seg.vhd"
+#    "sources/chronometer.vhd"
+#    "chronometer.xdc"
+#    "simulation/tb_chronometer.vhd"
 #
 #*****************************************************************************************
 
@@ -45,7 +45,7 @@ if { [info exists ::origin_dir_loc] } {
 }
 
 # Set the project name
-set _xil_proj_name_ "chronometer"
+set _xil_proj_name_ "vivado_chronometer"
 
 # Use project name variable, if specified in the tcl shell
 if { [info exists ::user_project_name] } {

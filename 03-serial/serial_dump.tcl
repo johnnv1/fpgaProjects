@@ -27,11 +27,11 @@
 #
 # 3. The following remote source files that were added to the original project:-
 #
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/03-serial/sources/delay.vhd"
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/03-serial/sources/serial.vhd"
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/03-serial/sources/counter.vhd"
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/03-serial/sources/data_shifter.vhd"
-#    "C:/Users/yakuza/Desktop/projetosCI/vivadoProjects/fpgaProjects/03-serial/nexys4DDR.xdc"
+#    "sources/delay.vhd"
+#    "sources/serial.vhd"
+#    "sources/counter.vhd"
+#    "sources/data_shifter.vhd"
+#    "nexys4DDR.xdc"
 #
 #*****************************************************************************************
 
@@ -44,7 +44,7 @@ if { [info exists ::origin_dir_loc] } {
 }
 
 # Set the project name
-set _xil_proj_name_ "serial"
+set _xil_proj_name_ "vivado_serial"
 
 # Use project name variable, if specified in the tcl shell
 if { [info exists ::user_project_name] } {

@@ -13,5 +13,7 @@ __pycache__/
 .Xil/
 vivado_*/
 sdk_*/
+.jou
+.log
 
 files/
