@@ -35,7 +35,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include "xil_types.h"
-#include "xil_cache.h"
+#include "xil_cache.h"''
 #include "timer_ps/timer_ps.h"
 #include "xparameters.h"
 #include "platform.h"
@@ -228,6 +228,7 @@ void DemoRun()
 			DisplayChangeFrame(&dispCtrl, nextFrame);
 			break;
 		case '3':
+			VtcIsr(&videoCapt, 0);
 			DemoPrintTest(pFrames[dispCtrl.curFrame], dispCtrl.vMode.width, dispCtrl.vMode.height, DEMO_STRIDE, DEMO_PATTERN_0);
 			break;
 		case '4':
@@ -286,8 +287,8 @@ void DemoRun()
 
 void DemoPrintMenu()
 {
-	xil_printf("\x1B[H"); //Set cursor to top left of terminal
-	xil_printf("\x1B[2J"); //Clear terminal
+	//xil_printf("\x1B[H"); //Set cursor to top left of terminal
+	//xil_printf("\x1B[2J"); //Clear terminal
 	xil_printf("**************************************************\n\r");
 	xil_printf("*                ZYBO Video Demo                 *\n\r");
 	xil_printf("**************************************************\n\r");

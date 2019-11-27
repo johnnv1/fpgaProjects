@@ -424,6 +424,7 @@ void GpioIsr(void *InstancePtr)
 		if (Status != (XST_SUCCESS))
 			return;
 
+
 		XVtc_SelfTest(&(videoPtr->vtc));
 
 		XVtc_RegUpdateEnable(&(videoPtr->vtc));
@@ -462,9 +463,9 @@ void VtcIsr(void *InstancePtr, u32 pendingIrpt)
 {
 	VideoCapture *videoPtr = (VideoCapture *)InstancePtr;
 
-	//xil_printf( "$");
-	if ((XVtc_GetDetectionStatus(&videoPtr->vtc) & XVTC_STAT_LOCKED_MASK))
-	{
+	xil_printf( "$");
+	//if ((XVtc_GetDetectionStatus(&videoPtr->vtc) & XVTC_STAT_LOCKED_MASK))
+	//{
 		XVtc_GetDetectorTiming(&videoPtr->vtc,&videoPtr->timing);
 		videoPtr->state = VIDEO_PAUSED;
 
@@ -477,7 +478,7 @@ void VtcIsr(void *InstancePtr, u32 pendingIrpt)
 			videoPtr->callBack(videoPtr->callBackRef, (void *) videoPtr);
 		XVtc_IntrDisable(&(videoPtr->vtc), 0x100);
 		XVtc_IntrClear(&(videoPtr->vtc), 0x100);
-	}
+	//}
 
 }
 
