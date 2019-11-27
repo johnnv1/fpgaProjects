@@ -3,7 +3,7 @@
 	url = https://github.com/Digilent/Zybo-hdmi-in.git
 [submodule "repo/old-vivado-library"]
 	path = repo/old-vivado-library
-	url = https://github.com/digilent/vivado-library/tree/bb8620ee2f4bd19ca7a16203a03b198d6f69c68d
+	url = https://github.com/digilent/vivado-library/
 [submodule "repo/vivado-library"]
 	path = repo/vivado-library
 	url = https://github.com/Digilent/vivado-library
