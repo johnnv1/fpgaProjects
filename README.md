@@ -6,6 +6,12 @@ Dentro da pasta *python_projects* há os códigos feitos em python onde é feito
 As demais pastas do repositorio contém os projetos desenvolvidos no Vivado 2019.1.1  em VHDL, verilog, etc. Utilizado em todos estes projetos uma Nexys 4 DDR da digilent.
 
 
+Para garantir que todo este repositorio e seus submodulos sejam clonados, execute:
+
+```bash
+git clone --recurse-submodules -j8 https://github.com/johnnv1/fpgaProjects.git
+```
+
 ## Criando um projeto no padrao do repositorio
 
 ```bash
