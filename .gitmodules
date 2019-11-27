@@ -1,0 +1,9 @@
+[submodule ".\\08-HDMI_demo\\Zybo-hdmi-in"]
+	path = .\\08-HDMI_demo\\Zybo-hdmi-in
+	url = https://github.com/Digilent/Zybo-hdmi-in.git
+[submodule "repo/old-vivado-library"]
+	path = repo/old-vivado-library
+	url = https://github.com/Digilent/vivado-library
+[submodule "repo/vivado-library"]
+	path = repo/vivado-library
+	url = https://github.com/Digilent/vivado-library
