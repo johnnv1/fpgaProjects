@@ -103,7 +103,6 @@
 //#define DEBUG
 
 #include "video_capture.h"
-#include "xil_printf.h"
 #include "xdebug.h"
 
 /* ------------------------------------------------------------ */
@@ -136,7 +135,7 @@ int VideoStop(VideoCapture *videoPtr)
 	XAxiVdma_Reset(videoPtr->vdma, XAXIVDMA_WRITE);
 	while(XAxiVdma_ResetNotDone(videoPtr->vdma, XAXIVDMA_WRITE));
 	videoPtr->state = VIDEO_PAUSED;
-	print("video stop - HDMI Video paused\r\n");
+
 	return XST_SUCCESS;
 }
 /* ------------------------------------------------------------ */
@@ -162,7 +161,7 @@ int VideoStart(VideoCapture *videoPtr)
 	int Status;
 	int i;
 
-	xil_printf("Video start entered init\n\r");
+	//xil_printf("Video start entered\n\r");
 	if (videoPtr->state == VIDEO_DISCONNECTED)
 		return XST_NO_DATA;
 	if (videoPtr->state == VIDEO_STREAMING)
@@ -184,34 +183,34 @@ int VideoStart(VideoCapture *videoPtr)
 		videoPtr->vdmaConfig.FrameStoreStartAddr[i] = (u32)  videoPtr->framePtr[i];
 	}
 
-	xil_printf( "Starting VDMA for Video capture\n\r");
+	xdbg_printf(XDBG_DEBUG_GENERAL, "Starting VDMA for Video capture\n\r");
 	Status = XAxiVdma_DmaConfig(videoPtr->vdma, XAXIVDMA_WRITE, &(videoPtr->vdmaConfig));
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf( "Write channel config failed %d\r\n", Status);
+		xdbg_printf(XDBG_DEBUG_GENERAL, "Write channel config failed %d\r\n", Status);
 		return XST_FAILURE;
 	}
 	Status = XAxiVdma_DmaSetBufferAddr(videoPtr->vdma, XAXIVDMA_WRITE, videoPtr->vdmaConfig.FrameStoreStartAddr);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf( "Write channel set buffer address failed %d\r\n", Status);
+		xdbg_printf(XDBG_DEBUG_GENERAL, "Write channel set buffer address failed %d\r\n", Status);
 		return XST_FAILURE;
 	}
 	Status = XAxiVdma_DmaStart(videoPtr->vdma, XAXIVDMA_WRITE);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf( "Start Write transfer failed %d\r\n", Status);
+		xdbg_printf(XDBG_DEBUG_GENERAL, "Start Write transfer failed %d\r\n", Status);
 		return XST_FAILURE;
 	}
 	Status = XAxiVdma_StartParking(videoPtr->vdma, videoPtr->curFrame, XAXIVDMA_WRITE);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf( "Unable to park the Write channel %d\r\n", Status);
+		xdbg_printf(XDBG_DEBUG_GENERAL, "Unable to park the Write channel %d\r\n", Status);
 		return XST_FAILURE;
 	}
 
 	videoPtr->state = VIDEO_STREAMING;
-print("video start - HDMI VIdeo stream \r\n");
+
 	return XST_SUCCESS;
 }
 
@@ -259,7 +258,6 @@ int VideoInitialize(VideoCapture *videoPtr, INTC *intCtrl, XAxiVdma *vdma, u16 g
 		videoPtr->framePtr[i] = framePtr[i];
 	}
 	videoPtr->state = VIDEO_DISCONNECTED;
-	print("video init - hdmi video disconnect \r\n");
 	videoPtr->stride = stride;
 
 	videoPtr->vtcId = vtcId;
@@ -273,7 +271,6 @@ int VideoInitialize(VideoCapture *videoPtr, INTC *intCtrl, XAxiVdma *vdma, u16 g
 	/*
 	 * Initialize the VDMA Read configuration struct
 	 */
-	print("video init - ini vdma read \r\n");
 	videoPtr->vdmaConfig.FrameDelay = 0;
 	videoPtr->vdmaConfig.EnableCircularBuf = 1;
 	videoPtr->vdmaConfig.EnableSync = 0;
@@ -282,13 +279,11 @@ int VideoInitialize(VideoCapture *videoPtr, INTC *intCtrl, XAxiVdma *vdma, u16 g
 
 	/* Initialize the GPIO driver. If an error occurs then exit */
 
-	print("video init - video init started \r\n");
-	xil_printf( "Video Init started\n\r");
+	xdbg_printf(XDBG_DEBUG_GENERAL, "Video Init started\n\r");
 	Status = XGpio_Initialize(&videoPtr->gpio, gpioId);
 	if (Status != XST_SUCCESS)
 	{
-		print("video init - xgpio init failed\r\n");
-		xil_printf( "XGPIO Init failed\n\r");
+		xdbg_printf(XDBG_DEBUG_GENERAL, "XGPIO Init failed\n\r");
 		return XST_FAILURE;
 	}
 
@@ -311,8 +306,6 @@ int VideoInitialize(VideoCapture *videoPtr, INTC *intCtrl, XAxiVdma *vdma, u16 g
 	 * Enable the GPIO channel interrupts so that push button can be
 	 * detected and enable interrupts for the GPIO device
 	 */
-
-	print("video init - enable gpio int \r\n");
 	XGpio_InterruptEnable(&videoPtr->gpio, XGPIO_IR_CH2_MASK);
 
 	/*
@@ -328,9 +321,8 @@ int VideoInitialize(VideoCapture *videoPtr, INTC *intCtrl, XAxiVdma *vdma, u16 g
 	 * Set HPD high, which will signal the HDMI source to begin transmitting.
 	 */
 	XGpio_DiscreteWrite(&videoPtr->gpio, 1, 1);
-	xil_printf( "Video Initialized!\n\r");
+	xdbg_printf(XDBG_DEBUG_GENERAL, "Video Initialized!\n\r");
 
-	print("video init - end of the function -- return sucess \r\n");
 	return XST_SUCCESS;
 }
 
@@ -367,7 +359,7 @@ int VideoChangeFrame(VideoCapture *videoPtr, u32 frameIndex)
 		Status = XAxiVdma_StartParking(videoPtr->vdma, videoPtr->curFrame, XAXIVDMA_WRITE);
 		if (Status != XST_SUCCESS)
 		{
-			xil_printf( "Cannot change frame, unable to start parking %d\r\n", Status);
+			xdbg_printf(XDBG_DEBUG_GENERAL, "Cannot change frame, unable to start parking %d\r\n", Status);
 			return XST_FAILURE;
 		}
 	}
@@ -424,7 +416,6 @@ void GpioIsr(void *InstancePtr)
 		if (Status != (XST_SUCCESS))
 			return;
 
-
 		XVtc_SelfTest(&(videoPtr->vtc));
 
 		XVtc_RegUpdateEnable(&(videoPtr->vtc));
@@ -454,8 +445,6 @@ void GpioIsr(void *InstancePtr)
 		if (videoPtr->callBack != NULL && videoPtr->state != VIDEO_DISCONNECTED)
 			videoPtr->callBack(videoPtr->callBackRef, (void *) videoPtr);
 		videoPtr->state = VIDEO_DISCONNECTED;
-
-		print("gpio isr - hdmi video disconnect \r\n");
 	}
 }
 
@@ -463,13 +452,11 @@ void VtcIsr(void *InstancePtr, u32 pendingIrpt)
 {
 	VideoCapture *videoPtr = (VideoCapture *)InstancePtr;
 
-	xil_printf( "$");
-	//if ((XVtc_GetDetectionStatus(&videoPtr->vtc) & XVTC_STAT_LOCKED_MASK))
-	//{
+	//xil_printf( "$");
+	if ((XVtc_GetDetectionStatus(&videoPtr->vtc) & XVTC_STAT_LOCKED_MASK))
+	{
 		XVtc_GetDetectorTiming(&videoPtr->vtc,&videoPtr->timing);
 		videoPtr->state = VIDEO_PAUSED;
-
-		print("vtc isr - hdmi video paused \r\n");
 		if (videoPtr->startOnDetect)
 		{
 			VideoStart(videoPtr);
@@ -478,7 +465,7 @@ void VtcIsr(void *InstancePtr, u32 pendingIrpt)
 			videoPtr->callBack(videoPtr->callBackRef, (void *) videoPtr);
 		XVtc_IntrDisable(&(videoPtr->vtc), 0x100);
 		XVtc_IntrClear(&(videoPtr->vtc), 0x100);
-	//}
+	}
 
 }
 

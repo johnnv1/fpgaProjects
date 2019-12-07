@@ -1,30 +1,15 @@
-/************************************************************************/
-/*																		*/
-/*	video_demo.c	--	ZYBO Video demonstration 						*/
-/*																		*/
-/************************************************************************/
-/*	Author: Sam Bobrowicz												*/
-/*	Copyright 2015, Digilent Inc.										*/
-/************************************************************************/
-/*  Module Description: 												*/
-/*																		*/
-/*		This file contains code for running a demonstration of the		*/
-/*		Video input and output capabilities on the ZYBO. It is a good	*/
-/*		example of how to properly use the display_ctrl and				*/
-/*		video_capture drivers.											*/
-/*																		*/
-/*																		*/
-/************************************************************************/
-/*  Revision History:													*/
-/* 																		*/
-/*		11/25/2015(SamB): Created										*/
-/*																		*/
-/************************************************************************/
-
 /* ------------------------------------------------------------ */
 /*				Include File Definitions						*/
 /* ------------------------------------------------------------ */
 
+// JGAA include
+#include <stdio.h>
+#include "xil_printf.h"
+#include <xgpio.h>
+#include "xparameters.h"
+#include "sleep.h"
+
+//video demo includes
 #include "video_demo.h"
 #include "video_capture/video_capture.h"
 #include "display_ctrl/display_ctrl.h"
@@ -35,14 +20,54 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include "xil_types.h"
-#include "xil_cache.h"''
+#include "xil_cache.h"
 #include "timer_ps/timer_ps.h"
 #include "xparameters.h"
-#include "platform.h"
 
+//udp includes
+
+#include "netif/xadapter.h"
+#include "platform_config.h"
+#include "lwipopts.h"
+#include "xil_printf.h"
+#include "lwip/priv/tcp_priv.h"
+#include "lwip/init.h"
+#include "lwip/inet.h"
+
+#include "platform.h"
+#if LWIP_DHCP==1
+#include "lwip/dhcp.h"
+extern volatile int dhcp_timoutcntr;
+#endif
+
+extern volatile int TcpFastTmrFlag;
+extern volatile int TcpSlowTmrFlag;
+
+#define DEFAULT_IP_ADDRESS	"192.168.1.10"
+#define DEFAULT_IP_MASK		"255.255.255.0"
+#define DEFAULT_GW_ADDRESS	"192.168.1.1"
+
+void platform_enable_interrupts(void);
+void start_application(void);
+void transfer_data(void);
+void print_app_header(void);
+
+#if defined (__arm__) && !defined (ARMR5)
+#if XPAR_GIGE_PCS_PMA_SGMII_CORE_PRESENT == 1 || \
+		 XPAR_GIGE_PCS_PMA_1000BASEX_CORE_PRESENT == 1
+int ProgramSi5324(void);
+int ProgramSfpPhy(void);
+#endif
+#endif
+
+#ifdef XPS_BOARD_ZCU102
+#ifdef XPAR_XIICPS_0_DEVICE_ID
+int IicPhyReset(void);
+#endif
+#endif
 
 /*
- * XPAR redefines
+ * XPAR redefines for video demo
  */
 #define DYNCLK_BASEADDR XPAR_AXI_DYNCLK_0_BASEADDR
 #define VGA_VDMA_ID XPAR_AXIVDMA_0_DEVICE_ID
@@ -57,7 +82,9 @@
 /* ------------------------------------------------------------ */
 /*				Global Variables								*/
 /* ------------------------------------------------------------ */
+//global var from jgaa
 
+//global var for video demo
 /*
  * Display and Video Driver structs
  */
@@ -81,23 +108,214 @@ const ivt_t ivt[] = {
 	videoVtcIvt(VID_VTC_IRPT_ID, &(videoCapt.vtc))
 };
 
-/* ------------------------------------------------------------ */
-/*				Procedure Definitions							*/
-/* ------------------------------------------------------------ */
+// global var for udp
+struct netif server_netif;
 
-int main(void)
+/* ------------------------------------------------------------ */
+/*				function     									*/
+/* ------------------------------------------------------------ */
+void printHeaderAPP()
 {
-    init_platform();
+	printf("\n\n*******************[JGAA]**************************\n");
+	printf("\t\t APP STREAM TCP/UDP\n");
+	printf("---------\n");
+	printf("init the APP\n");
+	printf("switch 1 - init video (hdmi to vga APP)\n");
+	printf("select UDP or TCP app\n");
+	printf("switch 2 - init UDP connection\n");
+	printf("switch 3 - inic TCP connection\n");
+	printf("---------\n");
+	printf("After init complete the LED is turn on (ref the number of the switch)\n");
+	printf("*******************[JGAA]**************************\n\n");
 
-    print("Hello World\n\r");
+}
 
-	DemoInitialize();
+void printCloseAPP()
+{
+	printf("\n\n*******************[JGAA]**************************\n");
+	printf("\t\t APP STREAM TCP/UDP is terminated\n");
+	printf("*******************[JGAA]**************************\n");
+
+}
+
+
+//UDP func
+static void print_ip(char *msg, ip_addr_t *ip)
+{
+	print(msg);
+	xil_printf("%d.%d.%d.%d\r\n", ip4_addr1(ip), ip4_addr2(ip),
+			ip4_addr3(ip), ip4_addr4(ip));
+}
+
+static void print_ip_settings(ip_addr_t *ip, ip_addr_t *mask, ip_addr_t *gw)
+{
+	print_ip("Board IP:       ", ip);
+	print_ip("Netmask :       ", mask);
+	print_ip("Gateway :       ", gw);
+}
+
+static void assign_default_ip(ip_addr_t *ip, ip_addr_t *mask, ip_addr_t *gw)
+{
+	int err;
+
+	xil_printf("Configuring default IP %s \r\n", DEFAULT_IP_ADDRESS);
+
+	err = inet_aton(DEFAULT_IP_ADDRESS, ip);
+	if (!err)
+		xil_printf("Invalid default IP address: %d\r\n", err);
+
+	err = inet_aton(DEFAULT_IP_MASK, mask);
+	if (!err)
+		xil_printf("Invalid default IP MASK: %d\r\n", err);
+
+	err = inet_aton(DEFAULT_GW_ADDRESS, gw);
+	if (!err)
+		xil_printf("Invalid default gateway address: %d\r\n", err);
+}
+
+int main(int argc, char **argv) {
+	XGpio inputBtn,inputSW, output;
+	int button_data = 0;
+	int switch_data = 0;
+	int stateInit = 0;
+
+	//udp
+	struct netif *netif;
+
+
+	printHeaderAPP();
+
+	printf("[JGAA] - Init the XPGIO to buttons, switch's and led's\n");
+	XGpio_Initialize(&inputBtn, XPAR_AXI_GPIO_BTN_DEVICE_ID);			//initialize input button XGpio variable
+	XGpio_Initialize(&inputSW, XPAR_AXI_GPIO_SW_DEVICE_ID);				//initialize input switch XGpio variable
+	XGpio_Initialize(&output, XPAR_AXI_GPIO_LED_DEVICE_ID);				//initialize output led XGpio variable
+
+	printf("[JGAA] - Set the XPGIO data direction to buttons, switch and led's\n");
+	XGpio_SetDataDirection(&inputBtn, 1, 0xF);							//set first channel tristate buffer to input button
+	XGpio_SetDataDirection(&inputSW, 1, 0xF);							//set first channel tristate buffer to input switch
+	XGpio_SetDataDirection(&output, 1, 0x0);							//set first channel tristate buffer to output led
+
+	printf("[JGAA] - Waiting user start the application...\n");
+	while(stateInit != 2 && stateInit != 3){
+	  switch_data = XGpio_DiscreteRead(&inputSW, 1);	//get switch data
+	  if(switch_data == 0b0000){}
+	  else if(((switch_data>>0) & 1) == 0b1 && stateInit == 0){
+		  printf("[JGAA] - Config and init the video...\n");
+		  DemoInitialize();
+		  stateInit = 1;
+
+	  }else if(((switch_data>>1) & 1) == 0b1 && stateInit == 1){
+		  printf("[JGAA] - Config and init the UDP...\n");
+		  /* the mac address of the board. this should be unique per board */
+		  unsigned char mac_ethernet_address[] = {
+			0x00, 0x0a, 0x35, 0x00, 0x01, 0x02 };
+		  netif = &server_netif;
+			#if defined (__arm__) && !defined (ARMR5)
+				#if XPAR_GIGE_PCS_PMA_SGMII_CORE_PRESENT == 1 || \
+					XPAR_GIGE_PCS_PMA_1000BASEX_CORE_PRESENT == 1
+
+		  	  	  	ProgramSi5324();
+					ProgramSfpPhy();
+				#endif
+			#endif
+
+			/* Define this board specific macro in order perform PHY reset
+			* on ZCU102
+			*/
+			#ifdef XPS_BOARD_ZCU102
+					IicPhyReset();
+			#endif
+
+			init_platform();
+
+			xil_printf("\r\n\r\n");
+			xil_printf("-----lwIP RAW Mode UDP Client Application-----\r\n");
+
+			/* initialize lwIP */
+			lwip_init();
+
+			/* Add network interface to the netif_list, and set it as default */
+			if (!xemac_add(netif, NULL, NULL, NULL, mac_ethernet_address,
+				PLATFORM_EMAC_BASEADDR)) {
+				xil_printf("Error adding N/W interface\r\n");
+				return -1;
+			}
+			netif_set_default(netif);
+
+			/* now enable interrupts */
+			platform_enable_interrupts();
+
+			/* specify that the network if is up */
+			netif_set_up(netif);
+
+			#if (LWIP_DHCP==1)
+				/* Create a new DHCP client for this interface.
+				* Note: you must call dhcp_fine_tmr() and dhcp_coarse_tmr() at
+				* the predefined regular intervals after starting the client.
+				*/
+				dhcp_start(netif);
+				dhcp_timoutcntr = 24;
+				while (((netif->ip_addr.addr) == 0) && (dhcp_timoutcntr > 0))
+					xemacif_input(netif);
+
+				if (dhcp_timoutcntr <= 0) {
+					if ((netif->ip_addr.addr) == 0) {
+							xil_printf("ERROR: DHCP request timed out\r\n");
+							assign_default_ip(&(netif->ip_addr), &(netif->netmask), &(netif->gw));
+					}
+				}
+
+				/* print IP address, netmask and gateway */
+			#else
+				assign_default_ip(&(netif->ip_addr), &(netif->netmask), &(netif->gw));
+			#endif
+
+			print_ip_settings(&(netif->ip_addr), &(netif->netmask), &(netif->gw));
+
+
+			/* print app header */
+			print_app_header();
+
+			/* start the application*/
+			start_application();
+
+			/*send a data*/
+			for(int i=0; i<10; i++){
+				if (TcpFastTmrFlag) {
+					tcp_fasttmr();
+					TcpFastTmrFlag = 0;
+				}
+				if (TcpSlowTmrFlag) {
+					tcp_slowtmr();
+					TcpSlowTmrFlag = 0;
+				}
+				xemacif_input(netif);
+				transfer_data();
+			}
+		  stateInit = 2;
+
+	  }else if(((switch_data>>2) & 1) == 0b1 && stateInit == 1){
+		  printf("[JGAA] - Config and init the TCP...\n");
+		  stateInit = 3;
+	  }else if(((switch_data>>3) & 1) == 0b1){
+		  	  break;
+	  }
+	  XGpio_DiscreteWrite(&output, 1, switch_data);	//write switch data to the LEDs
+	  usleep(200);			//delay
+	}
 
 	DemoRun();
 
-    cleanup_platform();
-    return 0;
+	printCloseAPP();
+	return 0;
 }
+
+
+// functions from videodemo
+
+
+
+
 
 
 void DemoInitialize()
@@ -105,7 +323,8 @@ void DemoInitialize()
 	int Status;
 	XAxiVdma_Config *vdmaConfig;
 	int i;
-	xil_printf("demo init - init of the demo init\n\r");
+
+	printf("\t[JGAA]{DemoInitialize()} - Initialize an array of pointers to the 3 frame buffers...\n");
 	/*
 	 * Initialize an array of pointers to the 3 frame buffers
 	 */
@@ -114,63 +333,70 @@ void DemoInitialize()
 		pFrames[i] = frameBuf[i];
 	}
 
+	printf("\t[JGAA]{DemoInitialize()} - Initialize a timer used for a simple delay...\n");
 	/*
 	 * Initialize a timer used for a simple delay
 	 */
 	TimerInitialize(SCU_TIMER_ID);
 
+	printf("\t[JGAA]{DemoInitialize()} - Initialize VDMA driver...\n");
 	/*
 	 * Initialize VDMA driver
 	 */
 	vdmaConfig = XAxiVdma_LookupConfig(VGA_VDMA_ID);
 	if (!vdmaConfig)
 	{
-		xil_printf("demo init - No video DMA found for ID %d\r\n", VGA_VDMA_ID);
+		printf("\t\t[JGAA]{DemoInitialize()} - No video DMA found for ID %d\n", VGA_VDMA_ID);
 		return;
 	}
 	Status = XAxiVdma_CfgInitialize(&vdma, vdmaConfig, vdmaConfig->BaseAddress);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf("demo init - VDMA Configuration Initialization failed %d\r\n", Status);
+		printf("\t\t[JGAA]{DemoInitialize()} - VDMA Configuration Initialization failed %d\n", Status);
 		return;
 	}
 
+	printf("\t[JGAA]{DemoInitialize()} - Initialize the Display controller and start it...\n");
 	/*
 	 * Initialize the Display controller and start it
 	 */
 	Status = DisplayInitialize(&dispCtrl, &vdma, DISP_VTC_ID, DYNCLK_BASEADDR, pFrames, DEMO_STRIDE);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf("demo init - Display Ctrl initialization failed during demo initialization%d\r\n", Status);
+		printf("\t\t[JGAA]{DemoInitialize()} - Display Ctrl initialization failed during demo initialization%d\n", Status);
 		return;
 	}
 	Status = DisplayStart(&dispCtrl);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf("demo init - Couldn't start display during demo initialization%d\r\n", Status);
+		printf("\t\t[JGAA]{DemoInitialize()} - Couldn't start display during demo initialization%d\n", Status);
 		return;
 	}
 
+	printf("\t[JGAA]{DemoInitialize()} - Initialize the Interrupt controller and start it...\n");
 	/*
 	 * Initialize the Interrupt controller and start it.
 	 */
 	Status = fnInitInterruptController(&intc);
 	if(Status != XST_SUCCESS) {
-		xil_printf("demo init - Error initializing interrupts");
+		printf("\t\t[JGAA]{DemoInitialize()} - Error initializing interrupts...\n");
 		return;
 	}
 	fnEnableInterrupts(&intc, &ivt[0], sizeof(ivt)/sizeof(ivt[0]));
 
+
+	printf("\t[JGAA]{DemoInitialize()} - Initialize the Video Capture device...\n");
 	/*
 	 * Initialize the Video Capture device
 	 */
-	Status = VideoInitialize(&videoCapt, &intc, &vdma, VID_GPIO_ID, VID_VTC_ID, VID_VTC_IRPT_ID, pFrames, DEMO_STRIDE, 0);
+	Status = VideoInitialize(&videoCapt, &intc, &vdma, VID_GPIO_ID, VID_VTC_ID, VID_VTC_IRPT_ID, pFrames, DEMO_STRIDE, DEMO_START_ON_DET);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf("demo init - Video Ctrl initialization failed during demo initialization%d\r\n", Status);
+		printf("\t\t[JGAA]{DemoInitialize()} - Video Ctrl initialization failed during demo initialization%d\n", Status);
 		return;
 	}
 
+	printf("\t[JGAA]{DemoInitialize()} - Set the Video Detect callback to trigger the menu to reset, displaying the new detected resolution...\n");
 	/*
 	 * Set the Video Detect callback to trigger the menu to reset, displaying the new detected resolution
 	 */
@@ -178,7 +404,7 @@ void DemoInitialize()
 
 	DemoPrintTest(dispCtrl.framePtr[dispCtrl.curFrame], dispCtrl.vMode.width, dispCtrl.vMode.height, dispCtrl.stride, DEMO_PATTERN_1);
 
-	xil_printf("demo init - end of the demo init\n\r");
+	printf("\t[JGAA]{DemoInitialize()} - Video init ended\n");
 	return;
 }
 
@@ -187,7 +413,6 @@ void DemoRun()
 	int nextFrame = 0;
 	char userInput = 0;
 
-	xil_printf("demo run - init of the demo run\n\r");
 	/* Flush UART FIFO */
 	while (XUartPs_IsReceiveData(UART_BASEADDR))
 	{
@@ -228,7 +453,6 @@ void DemoRun()
 			DisplayChangeFrame(&dispCtrl, nextFrame);
 			break;
 		case '3':
-			VtcIsr(&videoCapt, 0);
 			DemoPrintTest(pFrames[dispCtrl.curFrame], dispCtrl.vMode.width, dispCtrl.vMode.height, DEMO_STRIDE, DEMO_PATTERN_0);
 			break;
 		case '4':
@@ -237,10 +461,8 @@ void DemoRun()
 		case '5':
 			if (videoCapt.state == VIDEO_STREAMING)
 				VideoStop(&videoCapt);
-			else{
-				xil_printf("call VideoStart %d\r\n", &videoCapt);
+			else
 				VideoStart(&videoCapt);
-			}
 			break;
 		case '6':
 			nextFrame = videoCapt.curFrame + 1;
@@ -281,14 +503,14 @@ void DemoRun()
 			TimerDelay(500000);
 		}
 	}
-	xil_printf("demo run - end of the demo run\n\r");
+
 	return;
 }
 
 void DemoPrintMenu()
 {
-	//xil_printf("\x1B[H"); //Set cursor to top left of terminal
-	//xil_printf("\x1B[2J"); //Clear terminal
+	xil_printf("\x1B[H"); //Set cursor to top left of terminal
+	xil_printf("\x1B[2J"); //Clear terminal
 	xil_printf("**************************************************\n\r");
 	xil_printf("*                ZYBO Video Demo                 *\n\r");
 	xil_printf("**************************************************\n\r");
@@ -320,7 +542,6 @@ void DemoChangeRes()
 	int status;
 	char userInput = 0;
 
-	xil_printf("DemoChangeRes - init of the DemoChangeRes\n\r");
 	/* Flush UART FIFO */
 	while (XUartPs_IsReceiveData(UART_BASEADDR))
 	{
@@ -383,7 +604,6 @@ void DemoChangeRes()
 			xil_printf("\n\rWARNING: AXI VDMA Error detected and cleared\n\r");
 		}
 	}
-	xil_printf("DemoChangeRes - end of the DemoChangeRes\n\r");
 }
 
 void DemoCRMenu()
@@ -662,5 +882,6 @@ void DemoISR(void *callBackRef, void *pVideo)
 	char *data = (char *) callBackRef;
 	*data = 1; //set fRefresh to 1
 }
+
 
 
