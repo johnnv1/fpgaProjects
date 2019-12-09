@@ -154,6 +154,7 @@ int DisplayStart(DisplayCtrl *dispPtr)
 	 */
 	if (dispPtr->state == DISPLAY_RUNNING)
 	{
+		xdbg_printf(XDBG_DEBUG_GENERAL, "Already running, getting out\n\r");
 		return XST_SUCCESS;
 	}
 
@@ -227,7 +228,11 @@ int DisplayStart(DisplayCtrl *dispPtr)
 	SourceSelect.HFrontPorchSrc = 1;
 	SourceSelect.HTotalSrc = 1;
 
+	xdbg_printf(XDBG_DEBUG_GENERAL, "Calling self-test\n\r");
+
 	XVtc_SelfTest(&(dispPtr->vtc));
+
+	xdbg_printf(XDBG_DEBUG_GENERAL, "Setting VTC for display\n\r");
 
 	XVtc_RegUpdateEnable(&(dispPtr->vtc));
 	XVtc_SetGeneratorTiming(&(dispPtr->vtc), &vtcTiming);

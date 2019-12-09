@@ -1,0 +1,12 @@
+set_false_path -from [get_clocks clk_fpga_1] -to [get_clocks axi_dynclk_0_PXL_CLK_O]
+set_false_path -from [get_clocks axi_dynclk_0_PXL_CLK_O] -to [get_clocks clk_fpga_1] 
+#create_generated_clock -name hdmi_clk_n -source [get_pins hdmi_i/hdmi_in_clk_p] -multiply_by 1 -invert [get_pins hdmi_i/hdmi_in_clk_n]
+set_false_path -from [get_ports *_4bits_*i*]
+set_false_path -from [get_ports hdmi_hpd_tri*]
+set_false_path -from [get_ports hdmi_in_data*]
+set_false_path -from [get_ports hdmi_in_ddc*]
+set_false_path -to [get_ports vga_*]
+set_false_path -to [get_ports leds_4bits_tri_io*]
+set_false_path -to [get_ports hdmi_hpd_tri*]
+set_false_path -to [get_ports hdmi_in_ddc*]
+

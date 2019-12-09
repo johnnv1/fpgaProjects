@@ -38,23 +38,27 @@
 #include "xil_cache.h"
 #include "timer_ps/timer_ps.h"
 #include "xparameters.h"
+#include "platform.h"
+#include <xgpio.h>
+#include "gimp_image.h"
 
 /*
  * XPAR redefines
  */
 #define DYNCLK_BASEADDR XPAR_AXI_DYNCLK_0_BASEADDR
 #define VGA_VDMA_ID XPAR_AXIVDMA_0_DEVICE_ID
-#define DISP_VTC_ID XPAR_VTC_0_DEVICE_ID
-#define VID_VTC_ID XPAR_VTC_1_DEVICE_ID
+#define DISP_VTC_ID XPAR_VTC_1_DEVICE_ID
+#define VID_VTC_ID XPAR_VTC_0_DEVICE_ID
 #define VID_GPIO_ID XPAR_AXI_GPIO_VIDEO_DEVICE_ID
 #define VID_VTC_IRPT_ID XPS_FPGA3_INT_ID
-#define VID_GPIO_IRPT_ID XPS_FPGA4_INT_ID
+#define VID_GPIO_IRPT_ID XPS_FPGA2_INT_ID
 #define SCU_TIMER_ID XPAR_SCUTIMER_DEVICE_ID
 #define UART_BASEADDR XPAR_PS7_UART_1_BASEADDR
 
 /* ------------------------------------------------------------ */
 /*				Global Variables								*/
 /* ------------------------------------------------------------ */
+
 
 /*
  * Display and Video Driver structs
@@ -85,10 +89,31 @@ const ivt_t ivt[] = {
 
 int main(void)
 {
+	XGpio sws;
+	XGpio btns;
+	XGpio leds;
+
+	//init_platform();
+	print("Running HDMI In Demo Uergs - Joao Leonardo Fragoso\r\n");
+	XGpio_Initialize(&sws, XPAR_AXI_GPIO_SWS_DEVICE_ID);
+	XGpio_Initialize(&btns, XPAR_AXI_GPIO_BTNS_DEVICE_ID);
+	XGpio_Initialize(&leds, XPAR_AXI_GPIO_LEDS_DEVICE_ID);
+
+	XGpio_SetDataDirection(&sws, 1, 0xF);
+	XGpio_SetDataDirection(&btns, 1, 0xF);
+	XGpio_SetDataDirection(&leds, 1, 0x0);
+
+	XGpio_DiscreteWrite(&leds, 1, 0x1);
 	DemoInitialize();
 
-	DemoRun();
+	print("\r\nDemo Initialized... Press a button to continue\n\r");
 
+	while(XGpio_DiscreteRead(&btns,1) == 0);
+	XGpio_DiscreteWrite(&leds, 1, 0x4);
+
+	print("Starting demo...\r\n");
+	DemoRun();
+	cleanup_platform();
 	return 0;
 }
 
@@ -102,6 +127,7 @@ void DemoInitialize()
 	/*
 	 * Initialize an array of pointers to the 3 frame buffers
 	 */
+	xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Initializing frame buffer\r\n");
 	for (i = 0; i < DISPLAY_NUM_FRAMES; i++)
 	{
 		pFrames[i] = frameBuf[i];
@@ -110,17 +136,20 @@ void DemoInitialize()
 	/*
 	 * Initialize a timer used for a simple delay
 	 */
+	xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Initializing Timer\r\n");
 	TimerInitialize(SCU_TIMER_ID);
 
 	/*
 	 * Initialize VDMA driver
 	 */
+	xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Initializing VDMA Driver\r\n");
 	vdmaConfig = XAxiVdma_LookupConfig(VGA_VDMA_ID);
 	if (!vdmaConfig)
 	{
 		xil_printf("No video DMA found for ID %d\r\n", VGA_VDMA_ID);
 		return;
 	}
+	xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Configuring VDMA Driver %p \r\n", (void *)(vdmaConfig->BaseAddress));
 	Status = XAxiVdma_CfgInitialize(&vdma, vdmaConfig, vdmaConfig->BaseAddress);
 	if (Status != XST_SUCCESS)
 	{
@@ -131,32 +160,37 @@ void DemoInitialize()
 	/*
 	 * Initialize the Display controller and start it
 	 */
+	xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Initializing Display Controller\r\n");
 	Status = DisplayInitialize(&dispCtrl, &vdma, DISP_VTC_ID, DYNCLK_BASEADDR, pFrames, DEMO_STRIDE);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf("Display Ctrl initialization failed during demo initialization%d\r\n", Status);
+		xil_printf("Display Ctrl initialization failed during demo initialization %d\r\n", Status);
 		return;
 	}
+	xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Starting Display Controller\r\n");
 	Status = DisplayStart(&dispCtrl);
 	if (Status != XST_SUCCESS)
 	{
-		xil_printf("Couldn't start display during demo initialization%d\r\n", Status);
+		xil_printf("Couldn't start display during demo initialization %d\r\n", Status);
 		return;
 	}
 
 	/*
 	 * Initialize the Interrupt controller and start it.
 	 */
+	xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Initializing Interruptions\r\n");
 	Status = fnInitInterruptController(&intc);
 	if(Status != XST_SUCCESS) {
 		xil_printf("Error initializing interrupts");
 		return;
 	}
+	xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Enabling interruptions\r\n");
 	fnEnableInterrupts(&intc, &ivt[0], sizeof(ivt)/sizeof(ivt[0]));
 
 	/*
 	 * Initialize the Video Capture device
 	 */
+	xdbg_printf(XDBG_DEBUG_GENERAL,"[JLF] Initializing Video Capture\r\n");
 	Status = VideoInitialize(&videoCapt, &intc, &vdma, VID_GPIO_ID, VID_VTC_ID, VID_VTC_IRPT_ID, pFrames, DEMO_STRIDE, DEMO_START_ON_DET);
 	if (Status != XST_SUCCESS)
 	{
@@ -167,8 +201,10 @@ void DemoInitialize()
 	/*
 	 * Set the Video Detect callback to trigger the menu to reset, displaying the new detected resolution
 	 */
+	xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Setting ISR for Video Capture\r\n");
 	VideoSetCallback(&videoCapt, DemoISR, &fRefresh);
 
+	xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Calling video Test\r\n");
 	DemoPrintTest(dispCtrl.framePtr[dispCtrl.curFrame], dispCtrl.vMode.width, dispCtrl.vMode.height, dispCtrl.stride, DEMO_PATTERN_1);
 
 	return;
@@ -219,10 +255,14 @@ void DemoRun()
 			DisplayChangeFrame(&dispCtrl, nextFrame);
 			break;
 		case '3':
-			DemoPrintTest(pFrames[dispCtrl.curFrame], dispCtrl.vMode.width, dispCtrl.vMode.height, DEMO_STRIDE, DEMO_PATTERN_0);
+			xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Calling Print Test for frame %lu (%lu,%lu) stride=%d pattern=%d\r\n",
+					dispCtrl.curFrame, dispCtrl.vMode.width, dispCtrl.vMode.height, DEMO_STRIDE, DEMO_IMAGE);
+			DemoPrintTest(pFrames[dispCtrl.curFrame], dispCtrl.vMode.width, dispCtrl.vMode.height, DEMO_STRIDE, DEMO_IMAGE);
 			break;
 		case '4':
-			DemoPrintTest(pFrames[dispCtrl.curFrame], dispCtrl.vMode.width, dispCtrl.vMode.height, DEMO_STRIDE, DEMO_PATTERN_1);
+			xdbg_printf(XDBG_DEBUG_GENERAL, "[JLF] Calling Print Test for frame %lu (%lu,%lu) stride=%d pattern=%d\r\n",
+					dispCtrl.curFrame, dispCtrl.vMode.width, dispCtrl.vMode.height, DEMO_STRIDE, DEMO_PATTERN_0);
+			DemoPrintTest(pFrames[dispCtrl.curFrame], dispCtrl.vMode.width, dispCtrl.vMode.height, DEMO_STRIDE, DEMO_PATTERN_0);
 			break;
 		case '5':
 			if (videoCapt.state == VIDEO_STREAMING)
@@ -491,6 +531,7 @@ void DemoPrintTest(u8 *frame, u32 width, u32 height, u32 stride, int pattern)
 {
 	u32 xcoi, ycoi;
 	u32 iPixelAddr;
+	u32 iImageAddr;
 	u8 wRed, wBlue, wGreen;
 	u32 wCurrentInt;
 	double fRed, fBlue, fGreen, fColor;
@@ -636,6 +677,27 @@ void DemoPrintTest(u8 *frame, u32 width, u32 height, u32 stride, int pattern)
 		 * Flush the framebuffer memory range to ensure changes are written to the
 		 * actual memory, and therefore accessible by the VDMA.
 		 */
+		Xil_DCacheFlushRange((unsigned int) frame, DEMO_MAX_FRAME);
+		break;
+	case DEMO_IMAGE :
+		iPixelAddr = 0;
+		iImageAddr = 0;
+		for(ycoi=0;ycoi<height;ycoi++) {
+			iPixelAddr = ycoi*stride;
+			for(xcoi=0; xcoi<width; xcoi++) {
+				if (xcoi < image2.width && ycoi < image2.height) {
+					frame[iPixelAddr] = image2.pixel_data[iImageAddr+1]; //GRENN
+					frame[iPixelAddr + 1] = image2.pixel_data[iImageAddr+2]; //BLUE
+					frame[iPixelAddr + 2] = image2.pixel_data[iImageAddr]; //RED
+					iImageAddr+=3;
+				} else {
+					frame[iPixelAddr] = 0;
+					frame[iPixelAddr + 1] = 0;
+					frame[iPixelAddr + 2] = 0;
+				}
+				iPixelAddr+=3;
+			}
+		}
 		Xil_DCacheFlushRange((unsigned int) frame, DEMO_MAX_FRAME);
 		break;
 	default :
