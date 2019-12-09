@@ -31,7 +31,7 @@ write_project_tcl nameFile.tcl
 
 To create a project from the **tcl** file open the live and go to a live tcl console and run the command
 
-"Bash.
+```Bash.
 source nameArchive.tcl
 ```
 
