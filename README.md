@@ -1,41 +1,41 @@
-# Projetos na FPGA
-Projetos desenvolvidos ao longo da disciplina de projetos de CI
+# Projects in FPGA
+Projects developed throughout the discipline of IC projects
 
-Dentro da pasta *python_projects* há os códigos feitos em python onde é feito para simular as maquinas de estado e o funcionamento/sequencia do hw a ser deselvonvido posteriormente em VHDL, verilog, etc.
+Inside the *python_projects* folder there are the codes made in python where it is made to simulate the state machines and the hw function/sequence to be decelerated later in VHDL, verilog, etc.
 
-As demais pastas do repositorio contém os projetos desenvolvidos no Vivado 2019.1.1  em VHDL, verilog, etc. Utilizado em todos estes projetos uma Nexys 4 DDR da digilent.
+The other folders in the repository contain the projects developed in Vivado 2019.1.1 in VHDL, verilog, etc. Used in all these projects a Nexys 4 DDR or Zybo from digilent.
 
 
-Para garantir que todo este repositorio e seus submodulos sejam clonados, execute:
+To ensure that all this repository and its submodules are cloned, run:
 
 ```bash
 git clone --recurse-submodules -j8 https://github.com/johnnv1/fpgaProjects.git
 ```
 
-## Criando um projeto no padrao do repositorio
+## Creating a project in the repository pattern
 
-```bash
-python .\python_projects\create_project.py -n teste -v 10 #exemplo da criação de um projeto
-python .\python_projects\create_project.py --help #para ver as opções do algoritmo
+```Bash.
+python .\python_projects\create_project.py -n test -v 10 #example of creating a project
+python .\python_projects\create_project.py --help # to see the algorithm options
 ```
 
-## Como exportar/importar o projeto
-No console do vivado entre na pasta onde deseja exportar/salvar o projeto e execute o comando:
+## How to export/import the project
+In the live console enter the folder where you want to export/save the project and execute the command:
 
 ```bash
-write_project_tcl nomeDoArquivo.tcl
+write_project_tcl nameFile.tcl
 ```
 
 
 --------
 
-Para criar um projeto a partir do arquivo **tcl** abra o vivado e va para um tcl console do vivado e execute o comando
+To create a project from the **tcl** file open the live and go to a live tcl console and run the command
 
-```bash
-source nomeDoArquivo.tcl
+"Bash.
+source nameArchive.tcl
 ```
 
 
-## Repositorio original
+## Original repository
 
-Mantido pelo professor: *https://bitbucket.org/Joao-Fragoso/vivado-projects/src/master/*
+Maintained by the professor: *https://bitbucket.org/Joao-Fragoso/vivado-projects/src/master/*
