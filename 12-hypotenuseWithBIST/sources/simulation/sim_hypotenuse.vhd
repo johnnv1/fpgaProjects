@@ -123,7 +123,7 @@ begin
             elsif (cont = 60) then
                 a_i             <= "0100"; -- 4
                 b_i             <= "0011"; -- 3
-                test_A_sqr      <= "00001111"; -- 16 --- adicionado uma comparação errada aqui ou seja ta testando = 15
+                test_A_sqr      <= "00001111"; -- 16 --- adicionado uma compara??o errada aqui ou seja ta testando = 15
                 test_B_sqr      <= "00001001"; -- 9 
                 test_sum        <= "00011001"; -- 25       
                 test_sqrt       <= "0101"; -- 5

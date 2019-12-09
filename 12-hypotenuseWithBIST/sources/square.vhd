@@ -77,12 +77,11 @@ data_out <= res_tmp;
 process(res_tmp)
 begin
     if(rst_n = '1') then
-        if (res_tmp'event) then
             out_flag <= '1';
-        end if;
     else
         out_flag <= '0';
     end if;
 end process;
+
 
 end Behavioral;

@@ -36,14 +36,8 @@ entity top is
            rst_n : in STD_LOGIC;
            a_i : in STD_LOGIC_VECTOR (3 downto 0);
            b_i : in STD_LOGIC_VECTOR (3 downto 0);
-           test_enable : in STD_LOGIC;
            value_out : out STD_LOGIC_VECTOR (3 downto 0);
-           error_flag : out STD_LOGIC;
-           error_place : out STD_LOGIC_VECTOR (1 downto 0);
-           test_A_sqr: in STD_LOGIC_VECTOR (7 downto 0);
-           test_B_sqr: in STD_LOGIC_VECTOR (7 downto 0);       
-           test_sum: in STD_LOGIC_VECTOR (7 downto 0);       
-           test_sqrt: in STD_LOGIC_VECTOR (3 downto 0);
+     
            sqr_a_res  : out STD_LOGIC_VECTOR (7 downto 0);
            sqr_b_res  : out STD_LOGIC_VECTOR (7 downto 0);
            sum_res      : out STD_LOGIC_VECTOR (7 downto 0);
@@ -131,38 +125,7 @@ begin
         data_out => sqrt_result
     );
     
-    
-    process(clk)
-    begin
-        if(clk'event and clk = '1') then
-            if (test_enable = '1') then
-                if(a_SQR_flag = '1') then
-                    if (square_a_result /= test_A_sqr) then
-                        error_flag <= '1';
-                        error_place <= "00";
-                    end if;
-                end if;
-                if(b_SQR_flag = '1') then
-                    if (square_b_result /= test_B_sqr) then
-                        error_flag <= '1';
-                        error_place <= "01";
-                    end if;
-                end if;
-                if(sum_flag = '1') then
-                    if (sum_result /= test_sum) then
-                        error_flag <= '1';
-                        error_place <= "10";
-                    end if;
-                end if;
-                if(sqrt_flag = '1') then
-                    if (sqrt_result /= test_sqrt) then
-                        error_flag <= '1';
-                        error_place <= "11";
-                    end if;
-                end if;
-            end if;
-        end if;
-    end process;
+ 
     
     value_out <= sqrt_result;
     a <= a_i;
