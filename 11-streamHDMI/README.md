@@ -13,12 +13,12 @@ This is a project based on digilent's "hdmi_in" demo. The demo stream from HDMI 
 ## Project content
 
 * [c_sources](./c_sources/) - Contains the C projects of this project
-  * [hdmi-in](./c_sources/hdmi-in/) - Contains the digilent demo project, which is an application that puts the HDMI (input) in the VGA (output). This demo is edited by *João L. Fragoso* to use in new version of vivado (2018/2019).
+  * [hdmi-in](./c_sources/hdmi-in/) - Contains the digilent demo project, which is an application that puts the HDMI (input) in the VGA (output). This demo is edited by *João L. Fragoso* to use in **2018.3** version of vivado.
   * [UDP-client-perf](./c_sources/UDP-client-perf/) - Contains the demo project of xilinx, which is a performace client application with UDP sockets
   * [stream](./c_sources/stream/) - Contains the project that consists in accomplishing the objective of this project, VGA stream via sockets, where the VGA is the HDMI in.
 * [python_sources](./python_sources/) - Contains the Python files of this project, to receive the data by sockets
-* [HDL_sources](./HDL_sources/) - Contains the necessary files to generate the hardware project produced by me (files at [dir JGAA](./HDL_sources/JGAA/) - **this project doesn't work, it has some bug not found**) and the produced's by my teacher  *João L. Fragoso* to use in new version of vivado (2018/2019) (Files at [dir JLF](./HDL_sources/JLF/).
-* Files produced by me - **attention**: these results made by me, have some non-corrected bug that is crashing the application after booting it in sdk
+* [HDL_sources](./HDL_sources/) - Contains the necessary files to generate the hardware project produced by me (files at [dir JGAA](./HDL_sources/JGAA/) - **this project doesn't work, it has some bug not found**) and the produced's by my teacher  *João L. Fragoso* to use in **2018.3** version of vivado(Files at [dir JLF](./HDL_sources/JLF/).
+* Files produced by me - **attention**: these results made by me, have some non-corrected bug that is crashing the application after booting it in sdk. (I have the same problem trying to upgrade the JLF project to vivado/sdk for 2019.1, both just stopped after starting the application (init demo of HDMI-IN))
   * [blockDesign_dump_JGAA_Demo-hdmi-in.tcl](./blockDesign_dump_JGAA_Demo-hdmi-in.tcl) - File to generate the block design
   * [bitstream_dump_JGAA_Demo-hdmi-in.bit](./bitstream_dump_JGAA_Demo-hdmi-in.bit) - Bitstream of generated hardware
   * [HW_dump_JGAA_Demo-hdmi-in.hdf](./HW_dump_JGAA_Demo-hdmi-in.hdf) - The hardware file, this contain the bitstream
@@ -57,7 +57,7 @@ After this, you need have a project with the *hardware platform*, *bsp* and a ma
 * **bsp:** this is a project generate with the libs compatible with the hardware generate
 * **main:** this is where go the project.
 
-To test if the design is correct, you should use the [hdmi-in](c_sources/hdmi-in/) [demo project](https://github.com/Digilent/Zybo-hdmi-in) to check if the project to capture HDMI and put it on the VGA output (this project in my repository has some updates to work on the 2018/2019 version of the SDK). It can also be tested the socket issue, through the demo project available in the SDK, the [UDP client perf](c_sources/UDP-client-perf/).
+To test if the design is correct, you should use the [hdmi-in](c_sources/hdmi-in/) [demo project](https://github.com/Digilent/Zybo-hdmi-in) to check if the project to capture HDMI and put it on the VGA output (this project in my repository has some updates to work on the 2018.3 version of the SDK). It can also be tested the socket issue, through the demo project available in the SDK, the [UDP client perf](c_sources/UDP-client-perf/).
 
 
 After compile this project, with the zybo connected you can program the FPGA (at Xilinx SDK, you can go in Xilinx > program FPGA checks the infos and program the FPGA). With the FPGA programed you can lauch on hardware the *C* project (at Xilinx SDK, click on the **main project** go at menu in Run > Run as > Lauch on hardware (System debuger)). 

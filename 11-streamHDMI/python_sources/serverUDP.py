@@ -1,10 +1,18 @@
 import socket
-HOST = ''              # Endereco IP do Servidor
-PORT = 22            # Porta que o Servidor esta
-udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-orig = (HOST, PORT)
-udp.bind(orig)
+import sys
+
+# Create a UDP socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+# Bind the socket to the port
+server_address = ('192.168.1.120', 5000)
+print('starting up on {} port {}'.format(*server_address))
+sock.bind(server_address)
+
 while True:
-    msg, cliente = udp.recvfrom(1024)
-    print(cliente, msg)
-udp.close()
+    print('\nwaiting to receive message')
+    data, address = sock.recvfrom(1024)
+
+    print('received {} bytes from {}'.format(
+        len(data), address))
+    print(data)
