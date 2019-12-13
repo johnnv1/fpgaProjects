@@ -1,6 +1,7 @@
 /* ------------------------------------------------------------ */
 /*				Include File Definitions						*/
 /* ------------------------------------------------------------ */
+#define DEBUG true
 
 // JGAA include
 #include <stdio.h>
@@ -9,8 +10,9 @@
 #include "xparameters.h"
 #include "sleep.h"
 
+#include "config.h"
+
 //video demo includes
-#include "video_demo.h"
 #include "video_capture/video_capture.h"
 #include "display_ctrl/display_ctrl.h"
 #include "intc/intc.h"
@@ -27,30 +29,22 @@
 //udp includes
 
 #include "netif/xadapter.h"
-#include "platform_config.h"
+#include "platform/platform_config.h"
 #include "lwipopts.h"
 #include "xil_printf.h"
 #include "lwip/priv/tcp_priv.h"
 #include "lwip/init.h"
 #include "lwip/inet.h"
+#include "xscutimer.h"
+#include "platform/platform.h"
 
-#include "platform.h"
 #if LWIP_DHCP==1
-#include "lwip/dhcp.h"
-extern volatile int dhcp_timoutcntr;
+	#include "lwip/dhcp.h"
+	extern volatile int dhcp_timoutcntr;
 #endif
 
 extern volatile int TcpFastTmrFlag;
 extern volatile int TcpSlowTmrFlag;
-
-#define DEFAULT_IP_ADDRESS	"192.168.1.10"
-#define DEFAULT_IP_MASK		"255.255.255.0"
-#define DEFAULT_GW_ADDRESS	"192.168.1.1"
-
-void platform_enable_interrupts(void);
-void start_application(void);
-void transfer_data(void);
-void print_app_header(void);
 
 #if defined (__arm__) && !defined (ARMR5)
 #if XPAR_GIGE_PCS_PMA_SGMII_CORE_PRESENT == 1 || \
@@ -71,11 +65,11 @@ int IicPhyReset(void);
  */
 #define DYNCLK_BASEADDR XPAR_AXI_DYNCLK_0_BASEADDR
 #define VGA_VDMA_ID XPAR_AXIVDMA_0_DEVICE_ID
-#define DISP_VTC_ID XPAR_VTC_0_DEVICE_ID
-#define VID_VTC_ID XPAR_VTC_1_DEVICE_ID
+#define DISP_VTC_ID XPAR_VTC_1_DEVICE_ID
+#define VID_VTC_ID XPAR_VTC_0_DEVICE_ID
 #define VID_GPIO_ID XPAR_AXI_GPIO_VIDEO_DEVICE_ID
 #define VID_VTC_IRPT_ID XPS_FPGA3_INT_ID
-#define VID_GPIO_IRPT_ID XPS_FPGA4_INT_ID
+#define VID_GPIO_IRPT_ID XPS_FPGA2_INT_ID
 #define SCU_TIMER_ID XPAR_SCUTIMER_DEVICE_ID
 #define UART_BASEADDR XPAR_PS7_UART_1_BASEADDR
 
@@ -107,6 +101,7 @@ const ivt_t ivt[] = {
 	videoGpioIvt(VID_GPIO_IRPT_ID, &videoCapt),
 	videoVtcIvt(VID_VTC_IRPT_ID, &(videoCapt.vtc))
 };
+//{XPAR_PS7_SCUTIMER_0_INTR, (Xil_ExceptionHandler)timer_callback, (void *)(&TimerInstance), 0xC0, 0x03}
 
 // global var for udp
 struct netif server_netif;
@@ -114,6 +109,7 @@ struct netif server_netif;
 /* ------------------------------------------------------------ */
 /*				function     									*/
 /* ------------------------------------------------------------ */
+//functions from stream project
 void printHeaderAPP()
 {
 	printf("\n\n*******************[JGAA]**************************\n");
@@ -139,7 +135,7 @@ void printCloseAPP()
 }
 
 
-//UDP func
+//functions from  UDP
 static void print_ip(char *msg, ip_addr_t *ip)
 {
 	print(msg);
@@ -186,22 +182,32 @@ int main(int argc, char **argv) {
 	printHeaderAPP();
 
 	printf("[JGAA] - Init the XPGIO to buttons, switch's and led's\n");
-	XGpio_Initialize(&inputBtn, XPAR_AXI_GPIO_BTN_DEVICE_ID);			//initialize input button XGpio variable
-	XGpio_Initialize(&inputSW, XPAR_AXI_GPIO_SW_DEVICE_ID);				//initialize input switch XGpio variable
-	XGpio_Initialize(&output, XPAR_AXI_GPIO_LED_DEVICE_ID);				//initialize output led XGpio variable
+	XGpio_Initialize(&inputBtn, XPAR_AXI_GPIO_BTNS_DEVICE_ID);			//initialize input button XGpio variable
+	XGpio_Initialize(&inputSW, XPAR_AXI_GPIO_SWS_DEVICE_ID);				//initialize input switch XGpio variable
+	XGpio_Initialize(&output, XPAR_AXI_GPIO_LEDS_DEVICE_ID);				//initialize output led XGpio variable
 
 	printf("[JGAA] - Set the XPGIO data direction to buttons, switch and led's\n");
 	XGpio_SetDataDirection(&inputBtn, 1, 0xF);							//set first channel tristate buffer to input button
 	XGpio_SetDataDirection(&inputSW, 1, 0xF);							//set first channel tristate buffer to input switch
-	XGpio_SetDataDirection(&output, 1, 0x0);							//set first channel tristate buffer to output led
+	XGpio_SetDataDirection(&output, 1, 0x0);							//set fir
 
 	printf("[JGAA] - Waiting user start the application...\n");
 	while(stateInit != 2 && stateInit != 3){
 	  switch_data = XGpio_DiscreteRead(&inputSW, 1);	//get switch data
 	  if(switch_data == 0b0000){}
 	  else if(((switch_data>>0) & 1) == 0b1 && stateInit == 0){
+
 		  printf("[JGAA] - Config and init the video...\n");
+
 		  DemoInitialize();
+
+		  printf("[JGAA] - Wait a 5seconds of delay\n");
+
+		  sleep(6);
+
+		  printf("[JGAA] - Terminated the config and init the video. Video is initialized\n");
+		  if (videoCapt.state == VIDEO_DISCONNECTED) printf("[JGAA] - *Video Capture Resolution: %22s*\n\n", "!HDMI UNPLUGGED!");
+		  else printf("[JGAA] - *Video Capture Resolution: %17dx%-4d* -- HDMI plugged\n\n", videoCapt.timing.HActiveVideo, videoCapt.timing.VActiveVideo);
 		  stateInit = 1;
 
 	  }else if(((switch_data>>1) & 1) == 0b1 && stateInit == 1){
@@ -210,30 +216,18 @@ int main(int argc, char **argv) {
 		  unsigned char mac_ethernet_address[] = {
 			0x00, 0x0a, 0x35, 0x00, 0x01, 0x02 };
 		  netif = &server_netif;
-			#if defined (__arm__) && !defined (ARMR5)
-				#if XPAR_GIGE_PCS_PMA_SGMII_CORE_PRESENT == 1 || \
-					XPAR_GIGE_PCS_PMA_1000BASEX_CORE_PRESENT == 1
 
-		  	  	  	ProgramSi5324();
-					ProgramSfpPhy();
-				#endif
-			#endif
-
-			/* Define this board specific macro in order perform PHY reset
-			* on ZCU102
-			*/
-			#ifdef XPS_BOARD_ZCU102
-					IicPhyReset();
-			#endif
-
-			init_platform();
-
-			xil_printf("\r\n\r\n");
-			xil_printf("-----lwIP RAW Mode UDP Client Application-----\r\n");
-
+			//printf("[JGAA] - init platform\n");
+			//init_platform(&TimerInstance);
+			printf("[JGAA] - Setting timers...\n");
+			platform_setup_timer();
+		  	platform_setup_interrupts();
+			printf("[JGAA] - initialize lwIP \n");
 			/* initialize lwIP */
 			lwip_init();
 
+
+			printf("[JGAA] - Add network interface to the netif_list, and set it as default  \n");
 			/* Add network interface to the netif_list, and set it as default */
 			if (!xemac_add(netif, NULL, NULL, NULL, mac_ethernet_address,
 				PLATFORM_EMAC_BASEADDR)) {
@@ -243,20 +237,28 @@ int main(int argc, char **argv) {
 			netif_set_default(netif);
 
 			/* now enable interrupts */
+
 			platform_enable_interrupts();
 
+
+			printf("[JGAA] - specify that the network if is up\n");
 			/* specify that the network if is up */
 			netif_set_up(netif);
 
 			#if (LWIP_DHCP==1)
+				printf("[JGAA] - Create a new DHCP client for this interface.\n");
 				/* Create a new DHCP client for this interface.
 				* Note: you must call dhcp_fine_tmr() and dhcp_coarse_tmr() at
 				* the predefined regular intervals after starting the client.
 				*/
+
 				dhcp_start(netif);
 				dhcp_timoutcntr = 24;
+
+				printf("[JGAA] - Trying, timeout dhcp...\n");
 				while (((netif->ip_addr.addr) == 0) && (dhcp_timoutcntr > 0))
 					xemacif_input(netif);
+
 
 				if (dhcp_timoutcntr <= 0) {
 					if ((netif->ip_addr.addr) == 0) {
@@ -270,28 +272,38 @@ int main(int argc, char **argv) {
 				assign_default_ip(&(netif->ip_addr), &(netif->netmask), &(netif->gw));
 			#endif
 
+
+			printf("[JGAA] - print settings\n");
 			print_ip_settings(&(netif->ip_addr), &(netif->netmask), &(netif->gw));
 
 
 			/* print app header */
-			print_app_header();
+			//print_app_header();
 
+
+			printf("[JGAA] - start application UDP\n");
 			/* start the application*/
 			start_application();
 
+
+			printf("[JGAA] - send data\n");
 			/*send a data*/
-			for(int i=0; i<10; i++){
-				if (TcpFastTmrFlag) {
+			for(int tacds=0; tacds<10; tacds++){
+				/*if (TcpFastTmrFlag) {
 					tcp_fasttmr();
 					TcpFastTmrFlag = 0;
 				}
 				if (TcpSlowTmrFlag) {
 					tcp_slowtmr();
 					TcpSlowTmrFlag = 0;
-				}
+				}*/
 				xemacif_input(netif);
+				printf("[JGAA] - transfer data {%d}\n", tacds);
 				transfer_data();
+				usleep(6000);
 			}
+
+		  printf("[JGAA] - Terminated the config and init of the UDP client. \n\n");
 		  stateInit = 2;
 
 	  }else if(((switch_data>>2) & 1) == 0b1 && stateInit == 1){
@@ -301,7 +313,6 @@ int main(int argc, char **argv) {
 		  	  break;
 	  }
 	  XGpio_DiscreteWrite(&output, 1, switch_data);	//write switch data to the LEDs
-	  usleep(200);			//delay
 	}
 
 	DemoRun();
@@ -312,12 +323,6 @@ int main(int argc, char **argv) {
 
 
 // functions from videodemo
-
-
-
-
-
-
 void DemoInitialize()
 {
 	int Status;
@@ -366,6 +371,7 @@ void DemoInitialize()
 		printf("\t\t[JGAA]{DemoInitialize()} - Display Ctrl initialization failed during demo initialization%d\n", Status);
 		return;
 	}
+	printf("\t\t[JGAA]{DemoInitialize()} - start Display...\n");
 	Status = DisplayStart(&dispCtrl);
 	if (Status != XST_SUCCESS)
 	{

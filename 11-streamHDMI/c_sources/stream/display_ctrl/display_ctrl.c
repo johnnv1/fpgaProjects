@@ -148,12 +148,14 @@ int DisplayStart(DisplayCtrl *dispPtr)
 	XVtc_Timing vtcTiming;
 	XVtc_SourceSelect SourceSelect;
 
+	printf("\t\t\t[JGAA]{DemoInitialize()-DisplayStart()} - Starting video controller\n");
 	xdbg_printf(XDBG_DEBUG_GENERAL, "display start entered\n\r");
 	/*
 	 * If already started, do nothing
 	 */
 	if (dispPtr->state == DISPLAY_RUNNING)
 	{
+		xdbg_printf(XDBG_DEBUG_GENERAL, "Already running, getting out\n\r");
 		return XST_SUCCESS;
 	}
 
@@ -173,6 +175,7 @@ int DisplayStart(DisplayCtrl *dispPtr)
 	 * Write to the PLL dynamic configuration registers to configure it with the calculated
 	 * parameters.
 	 */
+	printf("\t\t\t[JGAA]{DemoInitialize()-DisplayStart()} - Writing clock registers\n");
 	if (!ClkFindReg(&clkReg, &clkMode))
 	{
 		xdbg_printf(XDBG_DEBUG_GENERAL, "Error calculating CLK register values\n\r");
@@ -227,7 +230,15 @@ int DisplayStart(DisplayCtrl *dispPtr)
 	SourceSelect.HFrontPorchSrc = 1;
 	SourceSelect.HTotalSrc = 1;
 
+	printf("\t\t\t[JGAA]{DemoInitialize()-DisplayStart()} - Calling self-test\n");
+
+	xdbg_printf(XDBG_DEBUG_GENERAL, "Calling self-test\n\r");
+
 	XVtc_SelfTest(&(dispPtr->vtc));
+
+	xdbg_printf(XDBG_DEBUG_GENERAL, "Setting VTC for display\n\r");
+
+	printf("\t\t\t[JGAA]{DemoInitialize()-DisplayStart()} - Enabling VTC\n\r");
 
 	XVtc_RegUpdateEnable(&(dispPtr->vtc));
 	XVtc_SetGeneratorTiming(&(dispPtr->vtc), &vtcTiming);
@@ -258,18 +269,23 @@ int DisplayStart(DisplayCtrl *dispPtr)
 	 * transferred until the disp_ctrl core signals the VDMA core by pulsing fsync.
 	 */
 
+	printf("\t\t\t[JGAA]{DemoInitialize()-DisplayStart()} - VDMA CONFIG\n");
+
 	Status = XAxiVdma_DmaConfig(dispPtr->vdma, XAXIVDMA_READ, &(dispPtr->vdmaConfig));
 	if (Status != XST_SUCCESS)
 	{
 		xdbg_printf(XDBG_DEBUG_GENERAL, "Read channel config failed %d\r\n", Status);
 		return XST_FAILURE;
 	}
+	printf("\t\t\t[JGAA]{DemoInitialize()-DisplayStart()} - VDMA setting buffer\n");
 	Status = XAxiVdma_DmaSetBufferAddr(dispPtr->vdma, XAXIVDMA_READ, dispPtr->vdmaConfig.FrameStoreStartAddr);
 	if (Status != XST_SUCCESS)
 	{
 		xdbg_printf(XDBG_DEBUG_GENERAL, "Read channel set buffer address failed %d\r\n", Status);
 		return XST_FAILURE;
 	}
+	printf("\t\t\t[JGAA]{DemoInitialize()-DisplayStart()} - VDMA Start\n");
+
 	Status = XAxiVdma_DmaStart(dispPtr->vdma, XAXIVDMA_READ);
 	if (Status != XST_SUCCESS)
 	{

@@ -27,14 +27,16 @@
 /*				Include File Definitions						*/
 /* ------------------------------------------------------------ */
 #include "timer_ps.h"
-#include "xscutimer.h"
+//#include "xscutimer.h"
 #include "xil_types.h"
+#include "xttcps.h"
 
 /* ------------------------------------------------------------ */
 /*				Global Variables								*/
 /* ------------------------------------------------------------ */
 
-XScuTimer TimerInstance;	/* Cortex A9 Scu Private Timer Instance */
+XTtcPs Timer0Instance;
+//XScuTimer TimerInstance;	/* Cortex A9 Scu Private Timer Instance */
 
 /* ------------------------------------------------------------ */
 /*				Procedure Definitions							*/
@@ -58,21 +60,25 @@ XScuTimer TimerInstance;	/* Cortex A9 Scu Private Timer Instance */
 int TimerInitialize(u16 TimerDeviceId)
 {
 	int Status;
-	XScuTimer *TimerInstancePtr = &TimerInstance;
-	XScuTimer_Config *ConfigTmrPtr;
+	XTtcPs *timer0 = &Timer0Instance;
+	XTtcPs_Config *configTimer0;
+
+	//XScuTimer *TimerInstancePtr = &TimerInstance;
+	//XScuTimer_Config *ConfigTmrPtr;
 
 	/*
 	 * Initialize the Scu Private Timer driver.
 	 */
-	ConfigTmrPtr = XScuTimer_LookupConfig(TimerDeviceId);
+	configTimer0 = XTtcPs_LookupConfig(TimerDeviceId);
+	//ConfigTmrPtr = XScuTimer_LookupConfig(TimerDeviceId);
 
 	/*
 	 * This is where the virtual address would be used, this example
 	 * uses physical address. Note that it is not considered an error
 	 * if the timer has already been initialized.
 	 */
-	Status = XScuTimer_CfgInitialize(TimerInstancePtr, ConfigTmrPtr,
-			ConfigTmrPtr->BaseAddr);
+	Status = XTtcPs_CfgInitialize(timer0, configTimer0, configTimer0->BaseAddress);
+	//Status = XScuTimer_CfgInitialize(TimerInstancePtr, ConfigTmrPtr,ConfigTmrPtr->BaseAddr);
 	if (Status != XST_SUCCESS || Status != XST_DEVICE_IS_STARTED) {
 		return XST_FAILURE;
 	}
@@ -80,7 +86,8 @@ int TimerInitialize(u16 TimerDeviceId)
 	/*
 	 * Set prescaler to 1
 	 */
-	XScuTimer_SetPrescaler(TimerInstancePtr, 0);
+	XTtcPs_SetPrescaler(timer0, 0);
+	//XScuTimer_SetPrescaler(TimerInstancePtr, 0);
 
 	return Status;
 }
@@ -104,14 +111,21 @@ void TimerDelay(u32 uSDelay)
 {
 	u32 timerCnt;
 
+	printf("\n\n*[JGAA] - ATTENCION THIS FUNCTION DONT WORK, THE CONFIG/USE OF TCC IS WRONG*\n\n");
 	timerCnt = (TIMER_FREQ_HZ / 1000000) * uSDelay;
 
+	/*
 	XScuTimer_Stop(&TimerInstance);
 	XScuTimer_DisableAutoReload(&TimerInstance);
 	XScuTimer_LoadTimer(&TimerInstance, timerCnt);
 	XScuTimer_Start(&TimerInstance);
 	while (XScuTimer_GetCounterValue(&TimerInstance))
-	{}
+	{}*/
+
+	XTtcPs_Stop(&Timer0Instance);
+	XTtcPs_ResetCounterValue(&Timer0Instance);
+	XTtcPs_Start(&Timer0Instance);
+	while(XTtcPs_GetCounterValue(&Timer0Instance) <= timerCnt){}
 
 	return;
 }
